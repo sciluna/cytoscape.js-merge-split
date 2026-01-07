@@ -1,0 +1,28 @@
+{
+  "name": "cytoscape-merge-split",
+  "version": "1.0.0",
+  "description": "An extension to merge/split graph components while respecting the existing layout",
+  "main": "dist/cytoscape-merge-split.js",
+  "module": "dist/cytoscape-merge-split.esm.js",
+  "type": "module",
+  "scripts": {
+    "build": "rollup -c",
+    "watch": "rollup -c -w"
+  },
+  "keywords": [
+    "cytoscape",
+    "extension",
+    "merge",
+    "split",
+    "graph"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@rollup/plugin-node-resolve": "^15.0.0",
+    "rollup": "^3.0.0"
+  },
+  "peerDependencies": {
+    "cytoscape": "^3.2.0"
+  }
+}

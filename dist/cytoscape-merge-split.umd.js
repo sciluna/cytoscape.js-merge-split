@@ -1,0 +1,76 @@
+(function (global, factory) {
+  typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
+  typeof define === 'function' && define.amd ? define(factory) :
+  (global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.cytoscapeMergeSplit = factory());
+})(this, (function () { 'use strict';
+
+  function mergeSplit(options) {
+  }
+
+  /**
+   * cytoscape-merge-split
+   * An extension to merge/split graph components while respecting the existing layout
+   */
+
+  function register(cytoscape) {
+    if (!cytoscape) {
+      return;
+    } // can't register if cytoscape unspecified
+
+    // Register the extension with cytoscape
+    cytoscape("core", "mergeSplit", function(opts) {
+      let cy = this;
+
+      let options = {
+        animate: true,
+        animationDuration: 1000
+      };
+      
+      // If opts is not 'get' that is it is a real options object then initilize the extension
+      if (opts !== 'get') {
+        options = extendOptions(options, opts);
+
+        let api = mergeSplit();
+
+        setScratch(cy, 'options', options);
+        setScratch(cy, 'api', api);
+      }
+      // Expose the API to the users
+      return getScratch(cy, 'api');
+    });
+
+    // Get the whole scratchpad reserved for this extension
+    function getScratch(cyOrEle, name) {
+      if (cyOrEle.scratch('cyComplexityManagement') === undefined) {
+        cyOrEle.scratch('cyComplexityManagement', {});
+      }
+
+      var scratch = cyOrEle.scratch('cyComplexityManagement');
+      var retVal = (name === undefined) ? scratch : scratch[name];
+      return retVal;
+    }
+
+    // Set a single property on scratchpad of the core
+    function setScratch(cyOrEle, name, val) {
+      getScratch(cyOrEle)[name] = val;
+    }
+
+    function extendOptions(options, extendBy) {
+      var tempOpts = {};
+      for (var key in options)
+        tempOpts[key] = options[key];
+
+      for (var key in extendBy)
+        if (tempOpts.hasOwnProperty(key))
+          tempOpts[key] = extendBy[key];
+      return tempOpts;
+    }
+  }
+
+  if (typeof window.cytoscape !== 'undefined') {	// expose to global cytoscape (i.e. window.cytoscape)
+    register(window.cytoscape);
+  }
+
+  return register;
+
+}));

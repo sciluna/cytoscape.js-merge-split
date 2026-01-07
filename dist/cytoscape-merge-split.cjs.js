@@ -1,10 +1,14 @@
+'use strict';
+
+function mergeSplit(options) {
+}
+
 /**
  * cytoscape-merge-split
  * An extension to merge/split graph components while respecting the existing layout
  */
-import { mergeSplit } from "./mergeSplit.js";
 
-export default function register(cytoscape) {
+function register(cytoscape) {
   if (!cytoscape) {
     return;
   } // can't register if cytoscape unspecified
@@ -22,7 +26,7 @@ export default function register(cytoscape) {
     if (opts !== 'get') {
       options = extendOptions(options, opts);
 
-      let api = mergeSplit(options);
+      let api = mergeSplit();
 
       setScratch(cy, 'options', options);
       setScratch(cy, 'api', api);
@@ -62,3 +66,5 @@ export default function register(cytoscape) {
 if (typeof window.cytoscape !== 'undefined') {	// expose to global cytoscape (i.e. window.cytoscape)
   register(window.cytoscape);
 }
+
+module.exports = register;

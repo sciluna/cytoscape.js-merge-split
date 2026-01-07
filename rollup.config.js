@@ -4,15 +4,20 @@ export default [
   {
     input: 'src/main.js',
     output: [
-      {
-        file: 'dist/cytoscape-merge-split.js',
+      { // Node.js (CommonJS)
+        file: 'dist/cytoscape-merge-split.cjs.js',
+        format: 'cjs',
+        exports: 'auto'
+      },
+      { // Direct browser use via <script>
+        file: 'dist/cytoscape-merge-split.umd.js',
         format: 'umd',
         name: 'cytoscapeMergeSplit',
         globals: {
           cytoscape: 'cytoscape'
         }
       },
-      {
+      { // Modern bundlers and browsers (ES Module)
         file: 'dist/cytoscape-merge-split.esm.js',
         format: 'esm'
       }

@@ -36,9 +36,4 @@ const register = function(cytoscape) {
   cytoscape('core', 'mergeSplit', mergeSplit);
 };
 
-// Export for different module systems
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = register;
-}
-
 export default register;

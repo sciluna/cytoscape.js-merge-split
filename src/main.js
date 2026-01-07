@@ -20,12 +20,12 @@ const register = function(cytoscape) {
     // Extension methods
     return {
       merge: function(nodes) {
-        // Merge functionality to be implemented
+        // TODO: Merge functionality to be implemented
         console.log('Merge function called with nodes:', nodes);
         return cy;
       },
       split: function(node) {
-        // Split functionality to be implemented
+        // TODO: Split functionality to be implemented
         console.log('Split function called with node:', node);
         return cy;
       }

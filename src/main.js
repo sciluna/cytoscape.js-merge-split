@@ -22,7 +22,7 @@ export default function register(cytoscape) {
     if (opts !== 'get') {
       options = extendOptions(options, opts);
 
-      let api = mergeSplit(options);
+      let api = mergeSplit(cy, options);
 
       setScratch(cy, 'options', options);
       setScratch(cy, 'api', api);

@@ -46,7 +46,7 @@
             {
               selector: 'node',
               style: {
-                'content': 'data(name)',
+                'content': (node) => {return node.data('label') ? node.data('label') : ''},
                 'background-color': "rgb(153,153,153)"
               }
             },
@@ -54,6 +54,7 @@
             {
               selector: 'edge',
               style: {
+                'curve-style': 'bezier',
                 'target-arrow-shape': 'triangle'
               }
             },
@@ -70,39 +71,67 @@
             name: 'preset',
             padding: 100
           },
-
           elements: {
             nodes: [
-              {data: {id: 'j', name: 'Jerry'}, position: {x: 0, y: 0}},
-              {data: {id: 'e', name: 'Elaine'}, position: {x: 0, y: 200}},
-              {data: {id: 'k', name: 'Kramer'}, position: {x: 200, y: 0}},
-              {data: {id: 'g', name: 'George'}, position: {x: 200, y: 200}}
+              {data: {id: 'n1', label: ''}, position: {x: 0, y: 0}},
+              {data: {id: 'n2', label: ''}, position: {x: -200, y: 100}},
+              {data: {id: 'n3', label: 'A'}, position: {x: -100, y: 100}},
+              {data: {id: 'n4', label: 'B'}, position: {x: 0, y: 100}},
+              {data: {id: 'n5', label: ''}, position: {x: 100, y: 100}},
+              {data: {id: 'n6', label: ''}, position: {x: -300, y: 200}},
+              {data: {id: 'n7', label: ''}, position: {x: -200, y: 200}},
+              {data: {id: 'n8', label: ''}, position: {x: -100, y: 200}},
+              {data: {id: 'n9', label: 'C'}, position: {x: 0, y: 200}},
+              {data: {id: 'n10', label: ''}, position: {x: 100, y: 200}},
+              {data: {id: 'n11', label: ''}, position: {x: -100, y: 300}},
+              {data: {id: 'n12', label: ''}, position: {x: 0, y: 300}},
+              {data: {id: 'n13', label: ''}, position: {x: -100, y: 400}},
+              {data: {id: 'n14', label: ''}, position: {x: 0, y: 400}},
+              {data: {id: 'n15', label: 'C'}, position: {x: 400, y: 100}},
+              {data: {id: 'n16', label: ''}, position: {x: 325, y: 175}},
+              {data: {id: 'n17', label: ''}, position: {x: 475, y: 175}},
+              {data: {id: 'n18', label: 'B'}, position: {x: 400, y: 250}},
+              {data: {id: 'n19', label: 'A'}, position: {x: 550, y: 250}},
+              {data: {id: 'n20', label: ''}, position: {x: 475, y: 325}}
             ],
             edges: [
-              {data: {source: 'j', target: 'e'}},
-              {data: {source: 'j', target: 'k'}},
-              {data: {source: 'j', target: 'g'}},
-              {data: {source: 'e', target: 'k'}},
-              {data: {source: 'k', target: 'g'}},
+              {data: {source: 'n1', target: 'n4'}},
+              {data: {source: 'n2', target: 'n3'}},
+              {data: {source: 'n3', target: 'n4'}},
+              {data: {source: 'n4', target: 'n5'}},
+              {data: {source: 'n3', target: 'n8'}},
+              {data: {source: 'n4', target: 'n9'}},
+              {data: {source: 'n6', target: 'n7'}},
+              {data: {source: 'n7', target: 'n8'}},
+              {data: {source: 'n8', target: 'n9'}},
+              {data: {source: 'n9', target: 'n10'}},
+              {data: {source: 'n8', target: 'n11'}},
+              {data: {source: 'n9', target: 'n12'}},
+              {data: {source: 'n11', target: 'n13'}},
+              {data: {source: 'n12', target: 'n14'}},
+              {data: {source: 'n16', target: 'n15'}},
+              {data: {source: 'n17', target: 'n15'}},
+              {data: {source: 'n18', target: 'n15'}},
+              {data: {source: 'n19', target: 'n17'}},
+              {data: {source: 'n19', target: 'n18'}},
+              {data: {source: 'n20', target: 'n18'}},
+              {data: {source: 'n19', target: 'n20'}}
             ]
           },
         });
 
         // demo your core ext
-        const api = cy.transform({
+        const api = cy.mergeSplit({
           animate: document.getElementById("animate").checked,
           animationDuration: 1000
         });
         
-        document.getElementById("flipVertical").addEventListener("click", function() {
-          let selectedNodes = cy.nodes(":selected");
-          if (selectedNodes.length == 0) {
-            selectedNodes = cy.nodes();
-          }
-          api.flipVertical(selectedNodes);
+        document.getElementById("mergeButton").addEventListener("click", function() {
+          let selectedEles = cy.elements(":selected");
+          api.merge(selectedEles);
         });
 
-        document.getElementById("flipHorizontal").addEventListener("click", function() {
+/*         document.getElementById("flipHorizontal").addEventListener("click", function() {
           let selectedNodes = cy.nodes(":selected");
           if (selectedNodes.length == 0) {
             selectedNodes = cy.nodes();
@@ -126,7 +155,7 @@
           }
           let scalingFactor = parseFloat(document.getElementById("scalingFactor").value);
           api.scale(selectedNodes, scalingFactor);
-        });
+        }); */
 
       });
     </script>
@@ -134,7 +163,10 @@
 
   <body>
     <h1>cytoscape-merge-split demo</h1>
+    <button id="mergeButton">Merge Selected</button>
 
+    <label for="animate"> Animate:</label>
+    <input type="checkbox" id="animate" name="animate" checked>
     <div id="cy"></div>
 
   </body>

@@ -86,7 +86,7 @@ export function mergeSplit(cy, options) {
 
   };
 
-  api.split = function(component, keepBoundaryEles = true, splitDirection = "none") {
+  api.split = function(component, keepBoundaryEles = true, direction = "auto", offset = 100) {
     let restOfGraph = cy.elements().difference(component);
 
     let splittedComponent = cy.collection();
@@ -146,7 +146,7 @@ export function mergeSplit(cy, options) {
       console.log(splittedComponent);
     }
 
-    if(splitDirection != "none") {
+    if(direction != "none") {
       // calculate overall shift amount
       let shiftAmountX = 0;
       let shiftAmountY = 0;
@@ -158,35 +158,35 @@ export function mergeSplit(cy, options) {
         restBBox = restOfGraph.boundingBox();
       }
       // if auto, then decide split direction based on distance from center of restOfGraph - longer is better
-      if (splitDirection == "auto") { 
+      if (direction == "auto") { 
         let diffInX = (restBBox.x1 + restBBox.w / 2) - (splittedBBox.x1 + splittedBBox.w / 2);
         let diffInY = (restBBox.y1 + restBBox.h / 2) - (splittedBBox.y1 + splittedBBox.h / 2);
         if (Math.abs(diffInX) > Math.abs(diffInY)) {
           if (diffInX >= 0) {
-            splitDirection = "left";
+            direction = "left";
           } else {
-            splitDirection = "right";
+            direction = "right";
           }
         } else {
            if (diffInY >= 0) {
-            splitDirection = "up";
+            direction = "up";
           } else {
-            splitDirection = "down";
+            direction = "down";
           }         
         }
       } 
-      if (splitDirection == "left") {
-        shiftAmountX = (restBBox.x1 - splittedBBox.w / 2 - 100) - (splittedBBox.x1 + splittedBBox.w / 2);
+      if (direction == "left") {
+        shiftAmountX = (restBBox.x1 - splittedBBox.w / 2 - offset) - (splittedBBox.x1 + splittedBBox.w / 2);
         shiftAmountY = (restBBox.y1 + restBBox.h / 2) - (splittedBBox.y1 + splittedBBox.h / 2);
-      } else if (splitDirection == "right") {
-        shiftAmountX = (restBBox.x1 + restBBox.w + splittedBBox.w / 2 + 100) - (splittedBBox.x1 + splittedBBox.w / 2);
+      } else if (direction == "right") {
+        shiftAmountX = (restBBox.x1 + restBBox.w + splittedBBox.w / 2 + offset) - (splittedBBox.x1 + splittedBBox.w / 2);
         shiftAmountY = (restBBox.y1 + restBBox.h / 2) - (splittedBBox.y1 + splittedBBox.h / 2);        
-      } else if (splitDirection == "up") {
+      } else if (direction == "up") {
         shiftAmountX =(restBBox.x1 + restBBox.w / 2) - (splittedBBox.x1 + splittedBBox.w / 2);
-        shiftAmountY = (restBBox.y1 - splittedBBox.h / 2 - 100) - (splittedBBox.y1 + splittedBBox.h / 2);
-      } else if (splitDirection == "down") {
+        shiftAmountY = (restBBox.y1 - splittedBBox.h / 2 - offset) - (splittedBBox.y1 + splittedBBox.h / 2);
+      } else if (direction == "down") {
         shiftAmountX =(restBBox.x1 + restBBox.w / 2) - (splittedBBox.x1 + splittedBBox.w / 2);
-        shiftAmountY = (restBBox.y1 + restBBox.h + splittedBBox.h / 2 + 100) - (splittedBBox.y1 + splittedBBox.h / 2);
+        shiftAmountY = (restBBox.y1 + restBBox.h + splittedBBox.h / 2 + offset) - (splittedBBox.y1 + splittedBBox.h / 2);
       }
       if(options.animate) { // animate nodes to calculated position
         splittedComponent.nodes().forEach(node => {

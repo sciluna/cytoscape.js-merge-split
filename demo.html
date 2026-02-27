@@ -133,8 +133,11 @@
         });
 
         document.getElementById("splitButton").addEventListener("click", function() {
-          let selectedEles = cy.elements(":selected");
-          api.split(selectedEles, document.getElementById("keepBoundary").checked, document.getElementById("splitDirection").value);
+          const selectedEles = cy.elements(":selected");
+          const keepBoundaryEles = document.getElementById("keepBoundary").checked;
+          const splitDirection = document.getElementById("splitDirection").value;
+          const splitOffset = parseFloat(document.getElementById("splitOffset").value);
+          api.split(selectedEles, keepBoundaryEles, splitDirection, splitOffset);
         });
 
         document.getElementById('animate').addEventListener('change', function () {
@@ -159,7 +162,9 @@
       <option value="up">up</option>
       <option value="down">down</option>
       <option value="none">none</option>
-    </select>&nbsp;&nbsp;&nbsp;-&nbsp;&nbsp;
+    </select>&nbsp;
+    <label for="direction">Split offset:</label>
+    <input type="number" id="splitOffset" name="offset" min="0" max="1000" value="100" />&nbsp;&nbsp;&nbsp;-&nbsp;&nbsp;
     <label for="animate"> Animate:</label>
     <input type="checkbox" id="animate" name="animate" checked>
     <div id="cy"></div>

@@ -1,78 +1,7 @@
-let helper = {};
-
-/**
- * multiply an array with centering matrix
- * array and result are 1d arrays
- */
-helper.multGamma = function(array){
-  let result = [];
-  let sum = 0;
-
-  for(let i = 0; i < array.length; i++){
-    sum += array[i];
-  }
-
-  sum *= (-1)/array.length;
-
-  for(let i = 0; i < array.length; i++){
-    result[i] = sum + array[i];
-  }     
-  return result;
-};
-
-/**
- * matrix multiplication
- * array1, array2 and result are 2d arrays
- */
-helper.multMat = function(array1, array2){
-  let result = [];
-
-  for(let i = 0; i < array1.length; i++){
-      result[i] = [];
-      for(let j = 0; j < array2[0].length; j++){
-        result[i][j] = 0;
-        for(let k = 0; k < array1[0].length; k++){
-          result[i][j] += array1[i][k] * array2[k][j]; 
-        }
-      }
-    } 
-  return result;
-};
-
-/**
- * matrix transpose
- * array and result are 2d arrays
- */
-helper.transpose = function(array){
-  let result = [];
-  
-  for(let i = 0; i < array[0].length; i++){
-    result[i] = [];
-    for(let j = 0; j < array.length; j++){
-      result[i][j] = array[j][i];
-    }
-  }
-  
-  return result;
-};
-
-/**
- * dot product of two arrays with same size
- * array1 and array2 are 1d arrays
- */
-helper.dotProduct = function(array1, array2){
-  let product = 0;
-
-  for(let i = 0; i < array1.length; i++){
-    product += array1[i] * array2[i]; 
-  }
-
-  return product;
-};
-
 // Singular Value Decomposition implementation
 function SVD() {
-}
+};
+
 /* Below singular value decomposition (svd) code including hypot function is adopted from https://github.com/dragonfly-ai/JamaJS
    Some changes are applied to make the code compatible with the fcose code and to make it independent from Jama.
    Input matrix is changed to a 2D array instead of Jama matrix. Matrix dimensions are taken according to 2D array instead of using Jama functions.
@@ -340,6 +269,7 @@ SVD.svd = function (A) {
     return a;
   })(this.m);
   let wantu = true;
+  let wantv = true;
   let nct = Math.min(this.m - 1, this.n);
   let nrt = Math.max(0, Math.min(this.n - 2, this.m));
   for (let k = 0; k < Math.max(nct, nrt); k++) {
@@ -348,6 +278,7 @@ SVD.svd = function (A) {
       for (let i = k; i < this.m; i++) {
         this.s[k] = SVD.hypot(this.s[k], A[i][k]);
       }
+      ;
       if (this.s[k] !== 0.0) {
         if (A[k][k] < 0.0) {
           this.s[k] = -this.s[k];
@@ -355,6 +286,7 @@ SVD.svd = function (A) {
         for (let i = k; i < this.m; i++) {
           A[i][k] /= this.s[k];
         }
+        ;
         A[k][k] += 1.0;
       }
       this.s[k] = -this.s[k];
@@ -367,25 +299,30 @@ SVD.svd = function (A) {
         for (let i = k; i < this.m; i++) {
           t += A[i][k] * A[i][j];
         }
+        ;
         t = -t / A[k][k];
         for (let i = k; i < this.m; i++) {
           A[i][j] += t * A[i][k];
         }
+        ;
       }
       e[j] = A[k][j];
     }
+    ;
     if ((function (lhs, rhs) {
       return lhs && rhs;
     })(wantu, (k < nct))) {
       for (let i = k; i < this.m; i++) {
         this.U[i][k] = A[i][k];
       }
+      ;
     }
     if (k < nrt) {
       e[k] = 0;
       for (let i = k + 1; i < this.n; i++) {
         e[k] = SVD.hypot(e[k], e[i]);
       }
+      ;
       if (e[k] !== 0.0) {
         if (e[k + 1] < 0.0) {
           e[k] = -e[k];
@@ -393,6 +330,7 @@ SVD.svd = function (A) {
         for (let i = k + 1; i < this.n; i++) {
           e[i] /= e[k];
         }
+        ;
         e[k + 1] += 1.0;
       }
       e[k] = -e[k];
@@ -402,24 +340,31 @@ SVD.svd = function (A) {
         for (let i = k + 1; i < this.m; i++) {
           work[i] = 0.0;
         }
+        ;
         for (let j = k + 1; j < this.n; j++) {
           for (let i = k + 1; i < this.m; i++) {
             work[i] += e[j] * A[i][j];
           }
+          ;
         }
+        ;
         for (let j = k + 1; j < this.n; j++) {
           let t = -e[j] / e[k + 1];
           for (let i = k + 1; i < this.m; i++) {
             A[i][j] += t * work[i];
           }
+          ;
         }
+        ;
       }
-      {
+      if (wantv) {
         for (let i = k + 1; i < this.n; i++) {
           this.V[i][k] = e[i];
-        }      }
+        };
+      }
     }
-  }  let p = Math.min(this.n, this.m + 1);
+  };
+  let p = Math.min(this.n, this.m + 1);
   if (nct < this.n) {
     this.s[nct] = A[nct][nct];
   }
@@ -430,33 +375,42 @@ SVD.svd = function (A) {
     e[nrt] = A[nrt][p - 1];
   }
   e[p - 1] = 0.0;
-  {
+  if (wantu) {
     for (let j = nct; j < nu; j++) {
       for (let i = 0; i < this.m; i++) {
         this.U[i][j] = 0.0;
       }
+      ;
       this.U[j][j] = 1.0;
-    }    for (let k = nct - 1; k >= 0; k--) {
+    };
+    for (let k = nct - 1; k >= 0; k--) {
       if (this.s[k] !== 0.0) {
         for (let j = k + 1; j < nu; j++) {
           let t = 0;
           for (let i = k; i < this.m; i++) {
             t += this.U[i][k] * this.U[i][j];
-          }          t = -t / this.U[k][k];
+          };
+          t = -t / this.U[k][k];
           for (let i = k; i < this.m; i++) {
             this.U[i][j] += t * this.U[i][k];
-          }        }        for (let i = k; i < this.m; i++) {
+          };
+        };
+        for (let i = k; i < this.m; i++) {
           this.U[i][k] = -this.U[i][k];
-        }        this.U[k][k] = 1.0 + this.U[k][k];
+        };
+        this.U[k][k] = 1.0 + this.U[k][k];
         for (let i = 0; i < k - 1; i++) {
           this.U[i][k] = 0.0;
-        }      } else {
+        };
+      } else {
         for (let i = 0; i < this.m; i++) {
           this.U[i][k] = 0.0;
-        }        this.U[k][k] = 1.0;
+        };
+        this.U[k][k] = 1.0;
       }
-    }  }
-  {
+    };
+  }
+  if (wantv) {
     for (let k = this.n - 1; k >= 0; k--) {
       if ((function (lhs, rhs) {
         return lhs && rhs;
@@ -465,15 +419,21 @@ SVD.svd = function (A) {
           let t = 0;
           for (let i = k + 1; i < this.n; i++) {
             t += this.V[i][k] * this.V[i][j];
-          }          t = -t / this.V[k + 1][k];
+          };
+          t = -t / this.V[k + 1][k];
           for (let i = k + 1; i < this.n; i++) {
             this.V[i][j] += t * this.V[i][k];
-          }        }      }
+          };
+        };
+      }
       for (let i = 0; i < this.n; i++) {
         this.V[i][k] = 0.0;
-      }      this.V[k][k] = 1.0;
-    }  }
+      };
+      this.V[k][k] = 1.0;
+    };
+  }
   let pp = p - 1;
+  let iter = 0;
   let eps = Math.pow(2.0, -52.0);
   let tiny = Math.pow(2.0, -966.0);
   while ((p > 0)) {
@@ -487,7 +447,8 @@ SVD.svd = function (A) {
         e[k] = 0.0;
         break;
       }
-    }    if (k === p - 2) {
+    };
+    if (k === p - 2) {
       kase = 4;
     } else {
       let ks = void 0;
@@ -500,7 +461,8 @@ SVD.svd = function (A) {
           this.s[ks] = 0.0;
           break;
         }
-      }      if (ks === k) {
+      };
+      if (ks === k) {
         kase = 3;
       } else if (ks === p - 1) {
         kase = 1;
@@ -524,13 +486,16 @@ SVD.svd = function (A) {
               f = -sn * e[j - 1];
               e[j - 1] = cs * e[j - 1];
             }
-            {
+            if (wantv) {
               for (let i = 0; i < this.n; i++) {
                 t = cs * this.V[i][j] + sn * this.V[i][p - 1];
                 this.V[i][p - 1] = -sn * this.V[i][j] + cs * this.V[i][p - 1];
                 this.V[i][j] = t;
-              }            }
-          }        }        break;
+              };
+            }
+          };
+        };
+        break;
       case 2:
         {
           let f = e[k - 1];
@@ -542,13 +507,16 @@ SVD.svd = function (A) {
             this.s[j] = t;
             f = -sn * e[j];
             e[j] = cs * e[j];
-            {
+            if (wantu) {
               for (let i = 0; i < this.m; i++) {
                 t = cs * this.U[i][j] + sn * this.U[i][k - 1];
                 this.U[i][k - 1] = -sn * this.U[i][j] + cs * this.U[i][k - 1];
                 this.U[i][j] = t;
-              }            }
-          }        }        break;
+              };
+            }
+          };
+        };
+        break;
       case 3:
         {
           let scale = Math.max(Math.max(Math.max(Math.max(Math.abs(this.s[p - 1]), Math.abs(this.s[p - 2])), Math.abs(e[p - 2])), Math.abs(this.s[k])), Math.abs(e[k]));
@@ -582,12 +550,13 @@ SVD.svd = function (A) {
             e[j] = cs * e[j] - sn * this.s[j];
             g = sn * this.s[j + 1];
             this.s[j + 1] = cs * this.s[j + 1];
-            {
+            if (wantv) {
               for (let i = 0; i < this.n; i++) {
                 t = cs * this.V[i][j] + sn * this.V[i][j + 1];
                 this.V[i][j + 1] = -sn * this.V[i][j] + cs * this.V[i][j + 1];
                 this.V[i][j] = t;
-              }            }
+              };
+            }
             t = SVD.hypot(f, g);
             cs = f / t;
             sn = g / t;
@@ -596,22 +565,27 @@ SVD.svd = function (A) {
             this.s[j + 1] = -sn * e[j] + cs * this.s[j + 1];
             g = sn * e[j + 1];
             e[j + 1] = cs * e[j + 1];
-            if ((j < this.m - 1)) {
+            if (wantu && (j < this.m - 1)) {
               for (let i = 0; i < this.m; i++) {
                 t = cs * this.U[i][j] + sn * this.U[i][j + 1];
                 this.U[i][j + 1] = -sn * this.U[i][j] + cs * this.U[i][j + 1];
                 this.U[i][j] = t;
-              }            }
-          }          e[p - 2] = f;
-        }        break;
+              };
+            }
+          };
+          e[p - 2] = f;
+          iter = iter + 1;
+        };
+        break;
       case 4:
         {
           if (this.s[k] <= 0.0) {
             this.s[k] = (this.s[k] < 0.0 ? -this.s[k] : 0.0);
-            {
+            if (wantv) {
               for (let i = 0; i <= pp; i++) {
                 this.V[i][k] = -this.V[i][k];
-              }            }
+              };
+            }
           }
           while ((k < pp)) {
             if (this.s[k] >= this.s[k + 1]) {
@@ -620,23 +594,29 @@ SVD.svd = function (A) {
             let t = this.s[k];
             this.s[k] = this.s[k + 1];
             this.s[k + 1] = t;
-            if ((k < this.n - 1)) {
+            if (wantv && (k < this.n - 1)) {
               for (let i = 0; i < this.n; i++) {
                 t = this.V[i][k + 1];
                 this.V[i][k + 1] = this.V[i][k];
                 this.V[i][k] = t;
-              }            }
-            if ((k < this.m - 1)) {
+              };
+            }
+            if (wantu && (k < this.m - 1)) {
               for (let i = 0; i < this.m; i++) {
                 t = this.U[i][k + 1];
                 this.U[i][k + 1] = this.U[i][k];
                 this.U[i][k] = t;
-              }            }
+              };
+            }
             k++;
-          }          p--;
-        }        break;
+          };
+          iter = 0;
+          p--;
+        };
+        break;
     }
-  }  let result = {U: this.U, V: this.V, S: this.s};
+  };
+  let result = {U: this.U, V: this.V, S: this.s};
   return result;
 };
         
@@ -655,491 +635,4 @@ SVD.hypot = function(a, b) {
    return r;
 };
 
-function mergeSplit(cy, options) {
-  
-  // API to be returned
-  let api = {};
-
-  // merge given component1 to component2 based on common nodes
-  api.merge = function(sourceComponent, targetComponent){
-        
-    let sourceToTargetMap = new Map();
-    // construct common nodes map based on labels
-    sourceComponent.nodes("[label != '']").forEach(node => {
-      let nodeLabel = node.data('label');
-      let correspondingNode = targetComponent.nodes('[label = "' + nodeLabel + '"]')[0];
-      if (correspondingNode) {
-        sourceToTargetMap.set(node.id(), correspondingNode.id()); 
-      }
-    });
-
-    cy.style()
-      .selector('node.commonNode')
-        .style({
-          'background-color': '#ff0000'
-        }).update();  
-
-    sourceToTargetMap.forEach((value, key) => {
-      cy.getElementById(key).addClass("commonNode");
-      cy.getElementById(value).addClass("commonNode");
-    });
-
-    const transformationMatrix = calcTransformationMatrix(sourceToTargetMap);
-
-    let sourceBBox = sourceComponent.boundingBox({includeLabels: false, includeOverlays: false});
-    let sourceBBoxCenter = {x: sourceBBox.x1 + sourceBBox.w / 2, y: sourceBBox.y1 + sourceBBox.h / 2};
-
-    let transformationResult = [];
-    /* apply found transformation matrix to sourceBBox component */
-    for (let i = 0; i < sourceComponent.nodes().length; i++) {
-      let node = sourceComponent.nodes()[i];
-      let nodePosition = node.position();
-      let localX = nodePosition.x - sourceBBoxCenter.x;
-      let localY = nodePosition.y - sourceBBoxCenter.y;
-      let temp1 = [localX, localY];
-      let temp2 = [transformationMatrix[0][0], transformationMatrix[1][0]];
-      let temp3 = [transformationMatrix[0][1], transformationMatrix[1][1]];
-      transformationResult.push({x: helper.dotProduct(temp1, temp2) + sourceBBoxCenter.x, y: helper.dotProduct(temp1, temp3) + sourceBBoxCenter.y});
-    }
-
-    let aniArray = [];
-    for (let i = 0; i < sourceComponent.nodes().length; i++) {
-      let node = sourceComponent.nodes()[i];
-      let nodeAni = node.animation({
-        position: transformationResult[i],
-        queue: true
-      }, {
-        duration: options.animationDuration
-      });
-      aniArray.push(nodeAni);
-    }
-
-    setTimeout(function(){
-      aniArray.forEach(ani => {
-        ani.play();
-      });
-    }, 2000);
-
-    let ani3Array = [];
-    setTimeout(function(){
-      ani3Array = expandTarget(targetComponent, sourceComponent, sourceToTargetMap, options);
-      ani3Array[0].forEach(ani => {
-        ani.play();
-      });
-    }, 5000);
-
-    setTimeout(function(){
-      ani3Array[1].forEach(ani => {
-        ani.play();
-      });
-    }, 7000);
-
-    setTimeout(function(){
-      integrateSourceBBoxToTarget(sourceToTargetMap);
-    }, 9000); 
-
-  };
-
-  api.split = function(component, keepBoundaryEles = true, splitDirection = "none") {
-    let restOfGraph = cy.elements().difference(component);
-
-    let splittedComponent = cy.collection();
-    let boundaryNodes = undefined;
-    let edgesToRemove = undefined;
-    // keep boundary elements
-    if (keepBoundaryEles) {
-      // find the nodes that need to be split
-      boundaryNodes = component.nodes().filter(node => {
-        let filter = false;
-        let edgesConnectedToBoundary = node.edgesWith(restOfGraph);
-        if(edgesConnectedToBoundary.length > 0) {
-          filter = true;
-        }
-        return filter;
-      });
-
-      let boundaryNodesJsons = boundaryNodes.jsons();
-      let { jsons: clonedNodesJsons, oldIdToNewId} = cloneNodes(boundaryNodesJsons);
-
-      let clonedNodes = cy.collection();
-      cy.batch(function () {
-          clonedNodes = cy.add(clonedNodesJsons);
-          clonedNodes.select();
-      });
-      // process edges between boundary nodes and given separated component
-      // cloned nodes and edges stay on separated component side
-      let edgesToEvaluate = boundaryNodes.edgesWith(component);
-      let boundaryEdges = cy.collection();
-      let clonedEdges = cy.collection();
-      edgesToEvaluate.forEach(edge => {
-        if(oldIdToNewId[edge.source().id()] && !oldIdToNewId[edge.target().id()]) {
-          edge.move({
-            source: oldIdToNewId[edge.source().id()]
-          });
-        }
-        if(oldIdToNewId[edge.target().id()] && !oldIdToNewId[edge.source().id()]) {
-          edge.move({
-            target: oldIdToNewId[edge.target().id()]
-          });
-        }
-        if(oldIdToNewId[edge.source().id()] && oldIdToNewId[edge.target().id()]) {
-          let boundaryEdgesJsons = edge.jsons(); // we process a single edge, but cloneEdges function gets jsons
-          let result = cloneEdges(boundaryEdgesJsons, oldIdToNewId);
-          let clonedEdgeJson = result.jsons[0];
-          let clonedEdge = cy.add(clonedEdgeJson);
-          boundaryEdges.merge(edge);
-          clonedEdges.merge(clonedEdge);     
-        }
-      });
-
-      splittedComponent = cy.collection().merge(component.not(boundaryNodes).not(boundaryEdges)).merge(clonedNodes).merge(clonedEdges);
-    } else {	// ignore boundary nodes
-      edgesToRemove = component.edgesWith(restOfGraph);
-      splittedComponent.merge(component.not(edgesToRemove));
-      edgesToRemove.remove();
-      console.log(splittedComponent);
-    }
-
-    if(splitDirection != "none") {
-      // calculate overall shift amount
-      let shiftAmountX = 0;
-      let shiftAmountY = 0;
-      let splittedBBox = splittedComponent.boundingBox();
-      let restBBox;
-      if (splittedComponent.parent() && splittedComponent.parent().length > 0) { // we may need to find topMostParent here
-        restBBox = splittedComponent.parent()[0].descendants().not(splittedComponent).boundingBox();
-      } else {
-        restBBox = restOfGraph.boundingBox();
-      }
-      // if auto, then decide split direction based on distance from center of restOfGraph - longer is better
-      if (splitDirection == "auto") { 
-        let diffInX = (restBBox.x1 + restBBox.w / 2) - (splittedBBox.x1 + splittedBBox.w / 2);
-        let diffInY = (restBBox.y1 + restBBox.h / 2) - (splittedBBox.y1 + splittedBBox.h / 2);
-        if (Math.abs(diffInX) > Math.abs(diffInY)) {
-          if (diffInX >= 0) {
-            splitDirection = "left";
-          } else {
-            splitDirection = "right";
-          }
-        } else {
-           if (diffInY >= 0) {
-            splitDirection = "up";
-          } else {
-            splitDirection = "down";
-          }         
-        }
-      } 
-      if (splitDirection == "left") {
-        shiftAmountX = (restBBox.x1 - splittedBBox.w / 2 - 100) - (splittedBBox.x1 + splittedBBox.w / 2);
-        shiftAmountY = (restBBox.y1 + restBBox.h / 2) - (splittedBBox.y1 + splittedBBox.h / 2);
-      } else if (splitDirection == "right") {
-        shiftAmountX = (restBBox.x1 + restBBox.w + splittedBBox.w / 2 + 100) - (splittedBBox.x1 + splittedBBox.w / 2);
-        shiftAmountY = (restBBox.y1 + restBBox.h / 2) - (splittedBBox.y1 + splittedBBox.h / 2);        
-      } else if (splitDirection == "up") {
-        shiftAmountX =(restBBox.x1 + restBBox.w / 2) - (splittedBBox.x1 + splittedBBox.w / 2);
-        shiftAmountY = (restBBox.y1 - splittedBBox.h / 2 - 100) - (splittedBBox.y1 + splittedBBox.h / 2);
-      } else if (splitDirection == "down") {
-        shiftAmountX =(restBBox.x1 + restBBox.w / 2) - (splittedBBox.x1 + splittedBBox.w / 2);
-        shiftAmountY = (restBBox.y1 + restBBox.h + splittedBBox.h / 2 + 100) - (splittedBBox.y1 + splittedBBox.h / 2);
-      }
-      if(options.animate) { // animate nodes to calculated position
-        splittedComponent.nodes().forEach(node => {
-          node.animate({
-            position: ({x: node.position().x + shiftAmountX, y: node.position().y + shiftAmountY}),
-            duration: 2000
-          });
-        });
-      } else { // move nodes to calculated position without animation
-        splittedComponent.nodes().shift({ x: shiftAmountX, y: shiftAmountY }); 
-      }
-    }
-  };
-
-  return api;
-}
-
-// given sourceToTargetMap which contains mapping between common nodes in both components
-// calculate transformation matrix
-function calcTransformationMatrix (sourceToTargetMap) {
-  // construct source and target configurations
-  let targetMatrix = []; // A - target configuration
-  let sourceMatrix = []; // B - source configuration 
-
-  sourceToTargetMap.forEach((value, key) => {
-    let targetPosition = cy.getElementById(value).position();
-    targetMatrix.push([targetPosition.x, targetPosition.y]);
-
-    let sourcePosition = cy.getElementById(key).position();
-    sourceMatrix.push([sourcePosition.x, sourcePosition.y]);
-  });
-
-  // calculate transformation matrix
-  let transformationMatrix;
-  let targetMatrixTranspose = helper.transpose(targetMatrix);  // A'
-  let sourceMatrixTranspose = helper.transpose(sourceMatrix);  // B'
-
-  // centralize transpose matrices
-  for (let i = 0; i < targetMatrixTranspose.length; i++) {
-    targetMatrixTranspose[i] = helper.multGamma(targetMatrixTranspose[i]);
-    sourceMatrixTranspose[i] = helper.multGamma(sourceMatrixTranspose[i]);
-  }
-
-  // do actual calculation for transformation matrix
-  let tempMatrix = helper.multMat(targetMatrixTranspose, helper.transpose(sourceMatrixTranspose)); // tempMatrix = A'B
-  let SVDResult = SVD.svd(tempMatrix); // SVD(A'B) = USV', svd function returns U, S and V 
-  transformationMatrix = helper.multMat(SVDResult.V, helper.transpose(SVDResult.U)); // transformationMatrix = T = VU'
-
-  // to prevent floating-point precision errors 
-  transformationMatrix = transformationMatrix.map(inner =>
-    inner.map(n => Number(n.toFixed(1)))
-  );
-
-  return transformationMatrix;
-}
-
-function expandTarget(targetComponent, sourceComponent, sourceToTargetMap, options) {
-  let targetCommonNodeSet = cy.collection();
-  let sourceBBoxCommonNodeSet = cy.collection();
-  sourceToTargetMap.forEach((value, key) => {
-    targetCommonNodeSet.merge(cy.getElementById(value));
-    sourceBBoxCommonNodeSet.merge(cy.getElementById(key));
-  });
-
-  let bbTargetCommon = targetCommonNodeSet.boundingBox({includeLabels: false, includeOverlays: false});
-  let bbsourceBBoxCommon = sourceBBoxCommonNodeSet.boundingBox({includeLabels: false, includeOverlays: false});
-  let bbDiff = {x: (bbTargetCommon.x1 + bbTargetCommon.w / 2) - (bbsourceBBoxCommon.x1 + bbsourceBBoxCommon.w / 2), y: (bbTargetCommon.y1 + bbTargetCommon.h / 2) - (bbsourceBBoxCommon.y1 + bbsourceBBoxCommon.h / 2)};
-
-  sourceBBoxCommonNodeSet.forEach(node => {
-    node.scratch('position', {x: node.position().x + bbDiff.x, y: node.position().y + bbDiff.y});
-  });
-
-  let minXNode, maxXNode, minYNode, maxYNode = 0;
-  let minX = Number.MAX_SAFE_INTEGER;
-  let maxX = Number.MIN_SAFE_INTEGER;
-  let minY = Number.MAX_SAFE_INTEGER;
-  let maxY = Number.MIN_SAFE_INTEGER;
-  sourceBBoxCommonNodeSet.forEach((node, i) => {
-    let nodeTempPos = node.scratch('position');
-    if(nodeTempPos.x < minX) {
-      minXNode = node;
-      minX = nodeTempPos.x;
-    }
-    if(nodeTempPos.x > maxX) {
-      maxXNode = node;
-      maxX = nodeTempPos.x;
-    }
-    if(nodeTempPos.y < minY) {
-      minYNode = node;
-      minY = nodeTempPos.y;
-    }
-    if(nodeTempPos.y > maxY) {
-      maxYNode = node;
-      maxY = nodeTempPos.y;
-    }
-  });
-  
-  let upShiftAmount = cy.getElementById(sourceToTargetMap.get(minYNode.id())).position().y - minY;
-  let downShiftAmount = maxY - cy.getElementById(sourceToTargetMap.get(maxYNode.id())).position().y;
-  let leftShiftAmount = cy.getElementById(sourceToTargetMap.get(minXNode.id())).position().x - minX;
-  let rightShiftAmount = maxX - cy.getElementById(sourceToTargetMap.get(maxXNode.id())).position().x;
-
-  targetComponent.nodes().forEach(node => {
-    node.scratch('newPosition', {x: node.position().x, y: node.position().y});
-    if(node.position().y <= cy.getElementById(sourceToTargetMap.get(minYNode.id())).position().y) {
-      node.scratch('newPosition', {x: node.scratch('newPosition').x, y: node.scratch('newPosition').y - upShiftAmount});
-    }
-    if(node.position().y >= cy.getElementById(sourceToTargetMap.get(maxYNode.id())).position().y) {
-      node.scratch('newPosition', {x: node.scratch('newPosition').x, y: node.scratch('newPosition').y + downShiftAmount});
-    }
-    if(node.position().x <= cy.getElementById(sourceToTargetMap.get(minXNode.id())).position().x) {
-      node.scratch('newPosition', {x: node.scratch('newPosition').x - leftShiftAmount, y: node.scratch('newPosition').y});
-    }
-    if(node.position().x >= cy.getElementById(sourceToTargetMap.get(maxXNode.id())).position().x) {
-      node.scratch('newPosition', {x: node.scratch('newPosition').x + rightShiftAmount, y: node.scratch('newPosition').y});
-    }
-  });
-
-  let animations1 = [];
-  targetComponent.nodes().forEach(node => {
-    let ani = node.animation({
-      position: node.scratch('newPosition'),
-      queue: true
-    }, {
-      duration: options.animationDuration
-    });
-    animations1.push(ani);
-  });
-
-  let animations2 = [];
-  sourceComponent.nodes().forEach(node => {
-    let ani = node.animation({
-      position: {x: node.position().x + bbDiff.x, y: node.position().y + bbDiff.y},
-      queue: true
-    }, {
-      duration: options.animationDuration
-    });
-    animations2.push(ani);    
-  });
-  return [animations1, animations2];
-}
-
-function integrateSourceBBoxToTarget(sourceToTargetMap) {
-  sourceToTargetMap.forEach((value, key) => {
-    let sourceBBoxNode = cy.getElementById(key);
-    cy.getElementById(value);
-    sourceBBoxNode.incomers().edges().forEach(edge => {
-      if(!(sourceToTargetMap.get(edge.source().id()) && sourceToTargetMap.get(edge.target().id()) && cy.getElementById(sourceToTargetMap.get(edge.source().id())).edgesTo(cy.getElementById(sourceToTargetMap.get(edge.target().id())).length != 0))){
-        edge.move({
-          target: value
-        });
-      }
-    });
-    sourceBBoxNode.outgoers().edges().forEach(edge => {
-      if(!(sourceToTargetMap.get(edge.source().id()) && sourceToTargetMap.get(edge.target().id()) && cy.getElementById(sourceToTargetMap.get(edge.source().id())).edgesTo(cy.getElementById(sourceToTargetMap.get(edge.target().id())).length != 0))){
-        edge.move({
-          source: value
-        });
-      }
-    });
-    sourceBBoxNode.remove();	// remove dangling node
-  });
-  cy.elements().unselect();
-  //setTimeout(function(){
-    sourceToTargetMap.forEach((value, key) => {
-      cy.getElementById(value).removeClass("commonNode");
-    });
-  //}, 500); 
-}
-
-function cloneNodes(jsons) {
-  jsons = structuredClone(jsons);
-
-  let oldIdToNewId = {};
-  for (let i = 0; i < jsons.length; i++) {
-      let json = jsons[i];
-
-      // change id of the cloned node
-      let id = getCloneId("node");
-      oldIdToNewId[json.data.id] = id;
-      json.data.id = id;
-
-      // change parent reference of the cloned node if parent is also cloned
-      if (json.data["parent"] && oldIdToNewId[json.data["parent"]]) {
-        json.data["parent"] = oldIdToNewId[json.data["parent"]];
-      }
-  }
-  return {jsons, oldIdToNewId}; 
-}
-
-function cloneEdges(jsons, oldIdToNewId) {
-  jsons = structuredClone(jsons);
-
-  for (let i = 0; i < jsons.length; i++) {
-      let json = jsons[i];
-
-      // change id of the cloned edge
-      let id = getCloneId("edge");
-      oldIdToNewId[json.data.id] = id;
-      json.data.id = id;
-
-      const fields = ['source', 'target'];
-      // change source/target references of the cloned edge (source and target must also be cloned)
-      for (let k = 0; k < fields.length; k++) {
-        let field = fields[k];
-        if (json.data[field] && oldIdToNewId[json.data[field]])
-            json.data[field] = oldIdToNewId[json.data[field]];
-      }
-  }
-  return {jsons, oldIdToNewId}; 
-}
-
-function getCloneId(eleType) {
-  function s4() {
-      return Math.floor((1 + Math.random()) * 0x10000)
-          .toString(16)
-          .substring(1);
-  }
-
-  let cloneIdTemp = s4() + s4() + '-' + s4() + '-' + s4() + '-' +
-      s4() + '-' + s4() + s4() + s4();
-  if (eleType == "node") {
-    return 'n' + cloneIdTemp;
-  } else if(eleType == "edge") {
-    return 'e' + cloneIdTemp;
-  } else {
-    return cloneIdTemp;
-  }
-
-}
-
-/**
- * cytoscape-merge-split
- * An extension to merge/split graph components while respecting the existing layout
- */
-
-function register(cytoscape) {
-  if (!cytoscape) {
-    return;
-  } // can't register if cytoscape unspecified
-
-  // Register the extension with cytoscape
-  cytoscape("core", "mergeSplit", function(opts) {
-    let cy = this;
-
-    let options = {
-      animate: true,
-      animationDuration: 1000
-    };
-    
-    // If opts is not 'get' that is it is a real options object then initilize the extension
-    if (opts !== 'get') {
-      options = extendOptions(options, opts);
-
-      let api = mergeSplit(cy, options);
-
-      api.setOption = function(option, value) {
-        let options = getScratch(cy, 'options');
-        options[option] = value;
-        setScratch(cy, 'options', options);
-      };
-
-      setScratch(cy, 'options', options);
-      setScratch(cy, 'mergeSplit', api);
-    }
-    // Expose the API to the users
-    return getScratch(cy, 'mergeSplit');
-  });
-
-  // Get the whole scratchpad reserved for this extension
-  function getScratch(cyOrEle, name) {
-    if (cyOrEle.scratch('cyComplexityManagement') === undefined) {
-      cyOrEle.scratch('cyComplexityManagement', {});
-    }
-
-    var scratch = cyOrEle.scratch('cyComplexityManagement');
-    var retVal = (name === undefined) ? scratch : scratch[name];
-    return retVal;
-  }
-
-  // Set a single property on scratchpad of the core
-  function setScratch(cyOrEle, name, val) {
-    getScratch(cyOrEle)[name] = val;
-  }
-
-  function extendOptions(options, extendBy) {
-    var tempOpts = {};
-    for (var key in options)
-      tempOpts[key] = options[key];
-
-    for (var key in extendBy)
-      if (tempOpts.hasOwnProperty(key))
-        tempOpts[key] = extendBy[key];
-    return tempOpts;
-  }
-}
-
-if (typeof window.cytoscape !== 'undefined') {	// expose to global cytoscape (i.e. window.cytoscape)
-  register(window.cytoscape);
-}
-
-export { register as default };
+export default SVD;

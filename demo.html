@@ -123,39 +123,23 @@
         // demo your core ext
         const api = cy.mergeSplit({
           animate: document.getElementById("animate").checked,
-          animationDuration: 1000
+          animationDuration: 1500
         });
         
         document.getElementById("mergeButton").addEventListener("click", function() {
           let selectedEles = cy.elements(":selected");
-          api.merge(selectedEles);
+          let unselectedEles = cy.elements(":unselected");
+          api.merge(selectedEles, unselectedEles);
         });
 
-/*         document.getElementById("flipHorizontal").addEventListener("click", function() {
-          let selectedNodes = cy.nodes(":selected");
-          if (selectedNodes.length == 0) {
-            selectedNodes = cy.nodes();
-          }
-          api.flipHorizontal(selectedNodes);
+        document.getElementById("splitButton").addEventListener("click", function() {
+          let selectedEles = cy.elements(":selected");
+          api.split(selectedEles, document.getElementById("keepBoundary").checked, document.getElementById("splitDirection").value);
         });
 
-        document.getElementById("rotate").addEventListener("click", function() {
-          let selectedNodes = cy.nodes(":selected");
-          if (selectedNodes.length == 0) {
-            selectedNodes = cy.nodes();
-          }
-          let rotationDegree = parseInt(document.getElementById("rotationDegree").value);
-          api.rotate(selectedNodes, rotationDegree);
+        document.getElementById('animate').addEventListener('change', function () {
+          api.setOption("animate", document.getElementById("animate").checked);
         });
-
-        document.getElementById("scale").addEventListener("click", function() {
-          let selectedNodes = cy.nodes(":selected");
-          if (selectedNodes.length == 0) {
-            selectedNodes = cy.nodes();
-          }
-          let scalingFactor = parseFloat(document.getElementById("scalingFactor").value);
-          api.scale(selectedNodes, scalingFactor);
-        }); */
 
       });
     </script>
@@ -163,8 +147,19 @@
 
   <body>
     <h1>cytoscape-merge-split demo</h1>
-    <button id="mergeButton">Merge Selected</button>
-
+    <button id="mergeButton">Merge Selected</button>&nbsp;&nbsp;&nbsp;-&nbsp;&nbsp;
+    <button id="splitButton">Split Selected</button>&nbsp;
+    <label for="keepBoundary"> Keep boundary elements:</label>
+    <input type="checkbox" id="keepBoundary" name="keepBoundary" checked>&nbsp;
+    <label for="direction">Split direction:</label>
+    <select name="direction" id="splitDirection">
+      <option value="auto">auto</option>
+      <option value="left">left</option>
+      <option value="right">right</option>
+      <option value="up">up</option>
+      <option value="down">down</option>
+      <option value="none">none</option>
+    </select>&nbsp;&nbsp;&nbsp;-&nbsp;&nbsp;
     <label for="animate"> Animate:</label>
     <input type="checkbox" id="animate" name="animate" checked>
     <div id="cy"></div>

@@ -24,11 +24,17 @@ export default function register(cytoscape) {
 
       let api = mergeSplit(cy, options);
 
+      api.setOption = function(option, value) {
+        let options = getScratch(cy, 'options');
+        options[option] = value;
+        setScratch(cy, 'options', options);
+      };
+
       setScratch(cy, 'options', options);
-      setScratch(cy, 'api', api);
+      setScratch(cy, 'mergeSplit', api);
     }
     // Expose the API to the users
-    return getScratch(cy, 'api');
+    return getScratch(cy, 'mergeSplit');
   });
 
   // Get the whole scratchpad reserved for this extension

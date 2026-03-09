@@ -690,6 +690,7 @@
         cy.getElementById(value).addClass("commonNode");
       });
 
+      // calculate transformation matrix
       const transformationMatrix = calcTransformationMatrix(sourceToTargetMap);
 
       let sourceBBox = sourceComponent.boundingBox({includeLabels: false, includeOverlays: false});
@@ -726,6 +727,7 @@
         });
       }, 2000);
 
+      // expant target component
       let ani3Array = [];
       setTimeout(function(){
         ani3Array = expandTarget(targetComponent, sourceComponent, sourceToTargetMap, options);
@@ -740,12 +742,14 @@
         });
       }, 7000);
 
+      // merge source component to target
       setTimeout(function(){
         integrateSourceBBoxToTarget(sourceToTargetMap);
       }, 9000); 
 
     };
 
+    // split function - splits given component from the rest of the graph
     api.split = function(component, keepBoundaryEles = true, direction = "auto", offset = 100) {
       let restOfGraph = cy.elements().difference(component);
 
@@ -770,7 +774,7 @@
         let clonedNodes = cy.collection();
         cy.batch(function () {
             clonedNodes = cy.add(clonedNodesJsons);
-            clonedNodes.select();
+            //clonedNodes.select();
         });
         // process edges between boundary nodes and given separated component
         // cloned nodes and edges stay on separated component side
@@ -799,6 +803,7 @@
         });
 
         splittedComponent = cy.collection().merge(component.not(boundaryNodes).not(boundaryEdges)).merge(clonedNodes).merge(clonedEdges);
+        // cy.elements().not(splittedComponent).unselect();
       } else {	// ignore boundary nodes
         edgesToRemove = component.edgesWith(restOfGraph);
         splittedComponent.merge(component.not(edgesToRemove));
@@ -859,6 +864,8 @@
           splittedComponent.nodes().shift({ x: shiftAmountX, y: shiftAmountY }); 
         }
       }
+
+      return splittedComponent;
     };
 
     return api;

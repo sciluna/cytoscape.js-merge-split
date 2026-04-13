@@ -15,7 +15,16 @@ export default function register(cytoscape) {
 
     let options = {
       animate: true,
-      animationDuration: 1000
+      animationDuration: 1000,
+      nodeMatcher: (n1, n2) => {  // n1 from source component, n2 from target component
+        // check if labels match
+        return !!(n1.data('label') && n1.data('label') != '' && n2.data('label') && n2.data('label') != '' && n1.data('label') === n2.data('label'));
+      },
+      edgeMatcher: (e1, e2) => {  // e1 from source component, e2 from target component
+        // check if source and target labels match
+        return e1.source().data('label') === e2.source().data('label') &&
+        e1.target().data('label') === e2.target().data('label')
+      }
     };
     
     // If opts is not 'get' that is it is a real options object then initilize the extension

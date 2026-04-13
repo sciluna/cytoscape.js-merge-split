@@ -8,15 +8,16 @@ export function mergeSplit(cy, options) {
 
   // merge given component1 to component2 based on common nodes
   api.merge = function(sourceComponent, targetComponent){
-        
+    
+    // find common nodes and edges
     let sourceToTargetMap = new Map();
-    // construct common nodes map based on labels
-    sourceComponent.nodes("[label != '']").forEach(node => {
-      let nodeLabel = node.data('label');
-      let correspondingNode = targetComponent.nodes('[label = "' + nodeLabel + '"]')[0];
-      if (correspondingNode) {
-        sourceToTargetMap.set(node.id(), correspondingNode.id()); 
-      }
+    // construct common nodes map based on matched nodes
+    sourceComponent.nodes().forEach(node1 => {
+      targetComponent.nodes().forEach(node2 => {
+        if(options.nodeMatcher(node1, node2)) {
+          sourceToTargetMap.set(node1.id(), node2.id()); 
+        }
+      });
     });
 
     cy.style()
@@ -31,7 +32,42 @@ export function mergeSplit(cy, options) {
     });
 
     // calculate transformation matrix
-    const transformationMatrix = calcTransformationMatrix(sourceToTargetMap);
+    let transformationMatrix;
+
+    if (sourceToTargetMap.size == 1) {  // there is one common node, so check overlap of current and reflected versions
+      const targetBB = targetComponent.boundingBox({ includeLabels: false, includeOverlays: false });
+      const transforms = [
+        { name: "identity", fn: (x, y, cx, cy) => ({ x, y }) },
+        { name: "flipX", fn: (x, y, cx, cy) => ({ x, y: 2*cy - y }) },
+        { name: "flipY", fn: (x, y, cx, cy) => ({ x: 2*cx - x, y }) }
+      ];
+      const mapItem = sourceToTargetMap.entries().next().value;
+      const sourceNode = cy.getElementById(mapItem[0]);
+      const targetNode = cy.getElementById(mapItem[1]);
+      const shiftAmount = {x: targetNode.position().x - sourceNode.position().x, y: targetNode.position().y - sourceNode.position().y};
+
+      let best = Infinity;
+      let bestTransform = null;
+
+      for (const t of transforms) {
+        const score = scoreTransform(sourceComponent.nodes(), targetBB, t.fn, shiftAmount, sourceNode);
+
+        if (score < best) {
+          best = score;
+          bestTransform = t.name;
+        }
+      }
+      if (bestTransform == "identity") {
+        transformationMatrix = [[1, 0], [0, 1]];
+      } else if (bestTransform == "flipX"){
+        transformationMatrix = [[1, 0], [0, -1]];
+      } else {
+        transformationMatrix = [[-1, 0], [0, 1]];
+      }
+      console.log(bestTransform);
+    } else {  // common nodes are more than one
+      transformationMatrix = calcTransformationMatrix(sourceToTargetMap);
+    }
 
     let sourceBBox = sourceComponent.boundingBox({includeLabels: false, includeOverlays: false});
     let sourceBBoxCenter = {x: sourceBBox.x1 + sourceBBox.w / 2, y: sourceBBox.y1 + sourceBBox.h / 2};
@@ -65,7 +101,7 @@ export function mergeSplit(cy, options) {
       aniArray.forEach(ani => {
         ani.play();
       });
-    }, 2000);
+    }, 100);
 
     // expant target component
     let ani3Array = [];
@@ -74,18 +110,18 @@ export function mergeSplit(cy, options) {
       ani3Array[0].forEach(ani => {
         ani.play();
       });
-    }, 5000);
+    }, 4000);
 
     setTimeout(function(){
       ani3Array[1].forEach(ani => {
         ani.play();
       });
-    }, 7000);
+    }, 6000);
 
     // merge source component to target
     setTimeout(function(){
       integrateSourceBBoxToTarget(sourceToTargetMap);
-    }, 9000); 
+    }, 8000); 
 
   };
 
@@ -148,7 +184,7 @@ export function mergeSplit(cy, options) {
       edgesToRemove = component.edgesWith(restOfGraph);
       splittedComponent.merge(component.not(edgesToRemove));
       edgesToRemove.remove();
-      console.log(splittedComponent);
+      //console.log(splittedComponent);
     }
 
     if(direction != "none") {
@@ -197,7 +233,7 @@ export function mergeSplit(cy, options) {
         splittedComponent.nodes().forEach(node => {
           node.animate({
             position: ({x: node.position().x + shiftAmountX, y: node.position().y + shiftAmountY}),
-            duration: 2000
+            duration: options.animationDuration
           });
         });
       } else { // move nodes to calculated position without animation
@@ -209,6 +245,52 @@ export function mergeSplit(cy, options) {
   };
 
   return api;
+}
+
+// computes bounding box for given node positions by not considering node dimensions
+function computeBB(transformed) {
+  let minX = Infinity, minY = Infinity;
+  let maxX = -Infinity, maxY = -Infinity;
+
+  transformed.forEach(p => {
+    minX = Math.min(minX, p.x);
+    minY = Math.min(minY, p.y);
+    maxX = Math.max(maxX, p.x);
+    maxY = Math.max(maxY, p.y);
+  });
+
+  return { x1: minX, y1: minY, x2: maxX, y2: maxY };
+}
+
+// calculates intersection area
+function intersectionArea(a, b) {
+  const x1 = Math.max(a.x1, b.x1);
+  const y1 = Math.max(a.y1, b.y1);
+  const x2 = Math.min(a.x2, b.x2);
+  const y2 = Math.min(a.y2, b.y2);
+
+  if (x2 <= x1 || y2 <= y1) return 0;
+
+  return (x2 - x1) * (y2 - y1);
+}
+
+// returns intersection area for given transformation and shift
+function scoreTransform(sourceNodes, targetBB, transformFn, anchorShift, anchorNode) {
+  const { x: cx, y: cy } = anchorNode.position();
+  let transformed = sourceNodes.map(n => {
+    let { x, y } = n.position();
+
+    ({ x, y } = transformFn(x, y, cx, cy));
+
+    return {
+      x: x + anchorShift.x,
+      y: y + anchorShift.y
+    };
+  });
+
+  const bb = computeBB(transformed);
+
+  return intersectionArea(bb, targetBB);
 }
 
 // given sourceToTargetMap which contains mapping between common nodes in both components

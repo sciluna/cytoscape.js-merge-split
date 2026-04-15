@@ -16,6 +16,9 @@ To get the extension instance after initialization.
 `api.merge(sourceComponent, targetComponent)`
 Merge source component to target component.
 
+`api.mergePairwise(node1, node2, checkMatch)`
+Merge components using a node pair, optionally validating the match. node1 and node2 must be in different components. If checkMatch is true, nodeMatcher is used; otherwise, it is ignored.
+
 `api.split(component, keepBoundaryEles = true, direction = "auto", offset = 100)`
 Split the given component from the rest of the graph.
 

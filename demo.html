@@ -144,6 +144,13 @@
           api.merge(selectedEles, unselectedEles);
         });
 
+        document.getElementById("mergePairwiseButton").addEventListener("click", function() {
+          let selectedNode1 = cy.elements(":selected")[0];
+          let selectedNode2 = cy.elements(":selected")[1];
+          const strictCheck = document.getElementById("strictCheck").checked;
+          api.mergePairwise(selectedNode1, selectedNode2, strictCheck);
+        });
+
         document.getElementById("splitButton").addEventListener("click", function() {
           const selectedEles = cy.elements(":selected");
           const keepBoundaryEles = document.getElementById("keepBoundary").checked;
@@ -155,7 +162,6 @@
         document.getElementById('animate').addEventListener('change', function () {
           api.setOption("animate", document.getElementById("animate").checked);
         });
-
       });
     </script>
   </head>
@@ -164,6 +170,9 @@
     <h1>cytoscape-merge-split demo</h1>
     <div id="menu">
       <button id="mergeButton" style="margin-bottom: 8px;">Merge Selected</button><br>
+      <button id="mergePairwiseButton" style="margin-bottom: 8px;">Merge Pairwise</button>&nbsp;
+      <label for="keepBoundary"> Strict check:</label>
+      <input type="checkbox" id="strictCheck" name="strictCheck" style="margin-bottom: 15px;" checked><br>
       <hr style="margin-bottom: 15px;">
       <button id="splitButton" style="margin-bottom: 5px;">Split Selected</button><br>
       <label for="keepBoundary"> Keep boundary elements:</label>

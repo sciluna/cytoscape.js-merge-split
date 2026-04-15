@@ -6,19 +6,22 @@ export function mergeSplit(cy, options) {
   // API to be returned
   let api = {};
 
-  // merge given component1 to component2 based on common nodes
-  api.merge = function(sourceComponent, targetComponent){
-    
+  // merge given sourceComponent to targetComponent based on common nodes
+  api.merge = function (sourceComponent, targetComponent) {
     // find common nodes and edges
     let sourceToTargetMap = new Map();
     // construct common nodes map based on matched nodes
     sourceComponent.nodes().forEach(node1 => {
       targetComponent.nodes().forEach(node2 => {
-        if(options.nodeMatcher(node1, node2)) {
+        if (options.nodeMatcher(node1, node2)) {
           sourceToTargetMap.set(node1.id(), node2.id()); 
         }
       });
     });
+
+    if (sourceToTargetMap.size == 0) {
+      return;
+    }
 
     cy.style()
       .selector('node.commonNode')
@@ -31,102 +34,35 @@ export function mergeSplit(cy, options) {
       cy.getElementById(value).addClass("commonNode");
     });
 
-    // calculate transformation matrix
-    let transformationMatrix;
+    merge(sourceComponent, targetComponent, sourceToTargetMap, options);
+  };  
 
-    if (sourceToTargetMap.size == 1) {  // there is one common node, so check overlap of current and reflected versions
-      const targetBB = targetComponent.boundingBox({ includeLabels: false, includeOverlays: false });
-      const transforms = [
-        { name: "identity", fn: (x, y, cx, cy) => ({ x, y }) },
-        { name: "flipX", fn: (x, y, cx, cy) => ({ x, y: 2*cy - y }) },
-        { name: "flipY", fn: (x, y, cx, cy) => ({ x: 2*cx - x, y }) }
-      ];
-      const mapItem = sourceToTargetMap.entries().next().value;
-      const sourceNode = cy.getElementById(mapItem[0]);
-      const targetNode = cy.getElementById(mapItem[1]);
-      const shiftAmount = {x: targetNode.position().x - sourceNode.position().x, y: targetNode.position().y - sourceNode.position().y};
+  api.mergePairwise = function(node1, node2, checkMatch = true) {
+    if (!node1.isNode() || !node2.isNode()) {
+      console.log("At least one of the given parameters is not a node!");
+      return;
+    }
+    const component1 = node1.component();
+    const component2 = node2.component();
+    const [sourceComponent, targetComponent] = component1.nodes().length > component2.nodes().length ? [component2, component1] : [component1, component2];
 
-      let best = Infinity;
-      let bestTransform = null;
-
-      for (const t of transforms) {
-        const score = scoreTransform(sourceComponent.nodes(), targetBB, t.fn, shiftAmount, sourceNode);
-
-        if (score < best) {
-          best = score;
-          bestTransform = t.name;
-        }
-      }
-      if (bestTransform == "identity") {
-        transformationMatrix = [[1, 0], [0, 1]];
-      } else if (bestTransform == "flipX"){
-        transformationMatrix = [[1, 0], [0, -1]];
-      } else {
-        transformationMatrix = [[-1, 0], [0, 1]];
-      }
-      console.log(bestTransform);
-    } else {  // common nodes are more than one
-      transformationMatrix = calcTransformationMatrix(sourceToTargetMap);
+    if (sourceComponent.intersection(targetComponent).length != 0) {
+      console.log("Both nodes belong to same component!");
+      return;
     }
 
-    let sourceBBox = sourceComponent.boundingBox({includeLabels: false, includeOverlays: false});
-    let sourceBBoxCenter = {x: sourceBBox.x1 + sourceBBox.w / 2, y: sourceBBox.y1 + sourceBBox.h / 2};
-
-    let transformationResult = [];
-    /* apply found transformation matrix to sourceBBox component */
-    for (let i = 0; i < sourceComponent.nodes().length; i++) {
-      let node = sourceComponent.nodes()[i];
-      let nodePosition = node.position();
-      let localX = nodePosition.x - sourceBBoxCenter.x;
-      let localY = nodePosition.y - sourceBBoxCenter.y;
-      let temp1 = [localX, localY];
-      let temp2 = [transformationMatrix[0][0], transformationMatrix[1][0]];
-      let temp3 = [transformationMatrix[0][1], transformationMatrix[1][1]];
-      transformationResult.push({x: helper.dotProduct(temp1, temp2) + sourceBBoxCenter.x, y: helper.dotProduct(temp1, temp3) + sourceBBoxCenter.y});
+    let sourceToTargetMap = new Map();
+    if (!checkMatch || options.nodeMatcher(node1, node2)) {
+      const [sourceNode, targetNode] = sourceComponent.nodes().contains(node1) ? [node1, node2] : [node2, node1];
+      sourceToTargetMap.set(sourceNode.id(), targetNode.id());
     }
-
-    let aniArray = [];
-    for (let i = 0; i < sourceComponent.nodes().length; i++) {
-      let node = sourceComponent.nodes()[i];
-      let nodeAni = node.animation({
-        position: transformationResult[i],
-        queue: true
-      }, {
-        duration: options.animationDuration
-      });
-      aniArray.push(nodeAni);
+    if (sourceToTargetMap.size == 1) {
+      merge(sourceComponent, targetComponent, sourceToTargetMap, options);
     }
-
-    setTimeout(function(){
-      aniArray.forEach(ani => {
-        ani.play();
-      });
-    }, 100);
-
-    // expant target component
-    let ani3Array = [];
-    setTimeout(function(){
-      ani3Array = expandTarget(targetComponent, sourceComponent, sourceToTargetMap, options);
-      ani3Array[0].forEach(ani => {
-        ani.play();
-      });
-    }, 4000);
-
-    setTimeout(function(){
-      ani3Array[1].forEach(ani => {
-        ani.play();
-      });
-    }, 6000);
-
-    // merge source component to target
-    setTimeout(function(){
-      integrateSourceBBoxToTarget(sourceToTargetMap);
-    }, 8000); 
-
   };
 
   // split function - splits given component from the rest of the graph
-  api.split = function(component, keepBoundaryEles = true, direction = "auto", offset = 100) {
+  api.split = function (component, keepBoundaryEles = true, direction = "auto", offset = 100) {
     let restOfGraph = cy.elements().difference(component);
 
     let splittedComponent = cy.collection();
@@ -247,6 +183,136 @@ export function mergeSplit(cy, options) {
   return api;
 }
 
+// merge given sourceComponent to targetComponent based on common nodes in sourceToTargetMap
+function merge(sourceComponent, targetComponent, sourceToTargetMap, options) {
+  
+  // calculate transformation matrix
+  let transformationMatrix;
+
+  // if there is one common node, check overlap of current and reflected versions and decide transformation matrix accordingly
+  if (sourceToTargetMap.size == 1) {
+    const targetBBox = targetComponent.boundingBox({ includeLabels: false, includeOverlays: false });
+    const transforms = [
+      { name: "identity", fn: (x, y, cx, cy) => ({ x, y }) },
+      { name: "flipX", fn: (x, y, cx, cy) => ({ x, y: 2*cy - y }) },
+      { name: "flipY", fn: (x, y, cx, cy) => ({ x: 2*cx - x, y }) }
+    ];
+    const mapItem = sourceToTargetMap.entries().next().value;
+    const sourceNode = cy.getElementById(mapItem[0]);
+    const targetNode = cy.getElementById(mapItem[1]);
+    const shiftAmount = {x: targetNode.position().x - sourceNode.position().x, y: targetNode.position().y - sourceNode.position().y};
+
+    let best = Infinity;
+    let bestTransform = null;
+
+    for (const t of transforms) {
+      const score = scoreTransform(sourceComponent.nodes(), targetBBox, t.fn, shiftAmount, sourceNode);
+
+      if (score < best) {
+        best = score;
+        bestTransform = t.name;
+      }
+    }
+    if (bestTransform == "identity") {
+      transformationMatrix = [[1, 0], [0, 1]];
+    } else if (bestTransform == "flipX"){
+      transformationMatrix = [[1, 0], [0, -1]];
+    } else {
+      transformationMatrix = [[-1, 0], [0, 1]];
+    }
+  } else {  // common nodes are more than one
+    transformationMatrix = calcTransformationMatrix(sourceToTargetMap);
+  }
+
+  // apply transformation matrix to source component
+  let transformationResult = applyTransformationMatrix(sourceComponent, transformationMatrix);
+
+  // if common node size is 2, we also need to check reflected version for possible less overlap with the target component
+  if (sourceToTargetMap.size == 2) {
+    const [[sourceNode1ID, targetNode1ID], [sourceNode2ID, targetNode2ID]] = [...sourceToTargetMap];
+    const sourceNode1Pos = transformationResult.get(sourceNode1ID);
+    const sourceNode2Pos = transformationResult.get(sourceNode2ID);
+    const targetNode1Pos = cy.getElementById(targetNode1ID).position();
+    const targetNode2Pos = cy.getElementById(targetNode2ID).position();
+    const sourceMid = {
+      x: (sourceNode1Pos.x + sourceNode2Pos.x) / 2,
+      y: (sourceNode1Pos.y + sourceNode2Pos.y) / 2
+    };
+    const targetMid = {
+      x: (targetNode1Pos.x + targetNode2Pos.x) / 2,
+      y: (targetNode1Pos.y + targetNode2Pos.y) / 2
+    };
+    const shift = {
+      x: targetMid.x - sourceMid.x,
+      y: targetMid.y - sourceMid.y
+    };
+    const tempTransformationResultArray = [...transformationResult.values()];
+    const tempReflectedResultArray = reflectOverLine(tempTransformationResultArray, sourceNode1Pos, sourceNode2Pos);
+    const tempTransformationResultArrayShifted = tempTransformationResultArray.map(p => ({
+      x: p.x + shift.x,
+      y: p.y + shift.y
+    }));
+
+    const tempReflectedResultArrayShifted = tempReflectedResultArray.map(p => ({
+      x: p.x + shift.x,
+      y: p.y + shift.y
+    }));
+    // calculate intersection with shifted version of identity
+    const targetBBox = targetComponent.boundingBox({ includeLabels: false, includeOverlays: false });
+    const identityBBox = computeBB(tempTransformationResultArrayShifted);
+    const intersectionArea1 = intersectionArea(identityBBox, targetBBox);
+    // calculate intersection with shifted version of reflected
+    const reflectedBBox = computeBB(tempReflectedResultArrayShifted);
+    const intersectionArea2 = intersectionArea(reflectedBBox, targetBBox);
+    // set final positions based on intersection area (choose small one)
+    if (intersectionArea1 > intersectionArea2) {
+      let i = 0;
+      for (const key of transformationResult.keys()) {
+        transformationResult.set(key, tempReflectedResultArray[i++]);
+      }
+    }
+  }
+
+  let aniArray = [];
+  for (let i = 0; i < sourceComponent.nodes().length; i++) {
+    let node = sourceComponent.nodes()[i];
+    let nodeAni = node.animation({
+      position: transformationResult.get(node.id()),
+      queue: true
+    }, {
+      duration: options.animationDuration
+    });
+    aniArray.push(nodeAni);
+  }
+
+  setTimeout(function(){
+    aniArray.forEach(ani => {
+      ani.play();
+    });
+  }, 1000);
+
+  // expant target component
+  let ani3Array = [];
+  setTimeout(function(){
+    ani3Array = expandTarget(targetComponent, sourceComponent, sourceToTargetMap, options);
+    ani3Array[0].forEach(ani => {
+      ani.play();
+    });
+  }, 4000);
+
+  setTimeout(function(){
+    ani3Array[1].forEach(ani => {
+      ani.play();
+    });
+  }, 6000);
+
+  // merge source component to target
+  setTimeout(function(){
+    integrateSourceBBoxToTarget(sourceToTargetMap);
+  }, 8000); 
+
+}
+
 // computes bounding box for given node positions by not considering node dimensions
 function computeBB(transformed) {
   let minX = Infinity, minY = Infinity;
@@ -293,6 +359,45 @@ function scoreTransform(sourceNodes, targetBB, transformFn, anchorShift, anchorN
   return intersectionArea(bb, targetBB);
 }
 
+function reflectOverLine(points, p1, p2) {
+  const dx = p2.x - p1.x;
+  const dy = p2.y - p1.y;
+  const len = Math.sqrt(dx * dx + dy * dy);
+
+  // normalize direction vector
+  const ux = dx / len;
+  const uy = dy / len;
+
+  // reflection matrix
+  const a = 2 * ux * ux - 1;
+  const b = 2 * ux * uy;
+  const c = 2 * ux * uy;
+  const d = 2 * uy * uy - 1;
+
+  const reflected = [];
+
+  for (let i = 0; i < points.length; i++) {
+    const px = points[i].x;
+    const py = points[i].y;
+
+    // translate so line passes through origin
+    const tx = px - p1.x;
+    const ty = py - p1.y;
+
+    // apply reflection
+    const nx = tx * a + ty * c;
+    const ny = tx * b + ty * d;
+
+    // translate back
+    reflected.push({
+      x: nx + p1.x,
+      y: ny + p1.y
+    });
+  }
+
+  return reflected;
+}
+
 // given sourceToTargetMap which contains mapping between common nodes in both components
 // calculate transformation matrix
 function calcTransformationMatrix (sourceToTargetMap) {
@@ -330,6 +435,25 @@ function calcTransformationMatrix (sourceToTargetMap) {
   );
 
   return transformationMatrix;
+}
+
+function applyTransformationMatrix(sourceComponent, transformationMatrix) {
+  let sourceBBox = sourceComponent.boundingBox({includeLabels: false, includeOverlays: false});
+  let sourceBBoxCenter = {x: sourceBBox.x1 + sourceBBox.w / 2, y: sourceBBox.y1 + sourceBBox.h / 2};
+
+  let transformationResult = new Map();
+  /* apply found transformation matrix to source component */
+  for (let i = 0; i < sourceComponent.nodes().length; i++) {
+    let node = sourceComponent.nodes()[i];
+    let nodePosition = node.position();
+    let localX = nodePosition.x - sourceBBoxCenter.x;
+    let localY = nodePosition.y - sourceBBoxCenter.y;
+    let temp1 = [localX, localY];
+    let temp2 = [transformationMatrix[0][0], transformationMatrix[1][0]];
+    let temp3 = [transformationMatrix[0][1], transformationMatrix[1][1]];
+    transformationResult.set(node.id(), {x: helper.dotProduct(temp1, temp2) + sourceBBoxCenter.x, y: helper.dotProduct(temp1, temp3) + sourceBBoxCenter.y});
+  }
+  return transformationResult;
 }
 
 function expandTarget(targetComponent, sourceComponent, sourceToTargetMap, options) {

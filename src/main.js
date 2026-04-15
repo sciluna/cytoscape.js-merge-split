@@ -22,8 +22,7 @@ export default function register(cytoscape) {
       },
       edgeMatcher: (e1, e2) => {  // e1 from source component, e2 from target component
         // check if source and target labels match
-        return e1.source().data('label') === e2.source().data('label') &&
-        e1.target().data('label') === e2.target().data('label')
+        return e1.source().data('label') === e2.source().data('label') && e1.target().data('label') === e2.target().data('label');
       }
     };
     

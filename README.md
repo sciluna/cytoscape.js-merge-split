@@ -17,17 +17,17 @@ To get the extension instance after initialization.
 Merge source component to target component.
 
 `api.mergePairwise(node1, node2, checkMatch)`
-Merge components using a node pair, optionally validating the match. node1 and node2 must be in different components. If checkMatch is true, nodeMatcher is used; otherwise, it is ignored.
+Merge components using a node pair, optionally validating the match. node1 and node2 must be in different components. If `checkMatch` is true, `nodeMatcher` option is used; otherwise, it is ignored.
 
 `api.split(component, keepBoundaryEles = true, direction = "auto", offset = 100)`
-Split the given component from the rest of the graph.
+Split the given component from the rest of the graph. `keepBoundaryEles` determines if boundary elements are retained in both components. `direction` specifies the placement direction of the split component. `offset` defines the separation distance.
 
 `api.setOption(optionName, optionValue)`
 Change the given option with the given value.
 
 ## Default Options
 ```javascript
-    var options = {
+    let options = {
       animate: true, // whether to animate during merge/split operations
       animationDuration: 1000, // when animate is true, the duration in milliseconds of the animation
       nodeMatcher: (n1, n2) => {  // n1 from source component, n2 from target component

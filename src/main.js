@@ -14,7 +14,7 @@ export default function register(cytoscape) {
     let cy = this;
 
     let options = {
-      animate: true,
+      animate: "end",
       animationDuration: 1000,
       nodeMatcher: (n1, n2) => {  // n1 from source component, n2 from target component
         // check if labels match

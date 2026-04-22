@@ -59,7 +59,8 @@
               selector: 'node',
               style: {
                 'content': (node) => {return node.data('label') ? node.data('label') : ''},
-                'background-color': "rgb(153,153,153)"
+                'background-color': "rgb(153,153,153)",
+                'text-valign': "center"
               }
             },
 
@@ -85,7 +86,7 @@
           },
           elements: {
             nodes: [
-              {data: {id: 'n1', label: ''}, position: {x: 0, y: 0}},
+              {data: {id: 'n1', label: ''}, position: {x: 0, y: 0}}, // component 1
               {data: {id: 'n2', label: ''}, position: {x: -200, y: 100}},
               {data: {id: 'n3', label: 'A'}, position: {x: -100, y: 100}},
               {data: {id: 'n4', label: 'B'}, position: {x: 0, y: 100}},
@@ -95,19 +96,27 @@
               {data: {id: 'n8', label: ''}, position: {x: -100, y: 200}},
               {data: {id: 'n9', label: 'C'}, position: {x: 0, y: 200}},
               {data: {id: 'n10', label: ''}, position: {x: 100, y: 200}},
-              {data: {id: 'n11', label: ''}, position: {x: -100, y: 300}},
+              {data: {id: 'n11', label: '2'}, position: {x: -100, y: 300}},
               {data: {id: 'n12', label: ''}, position: {x: 0, y: 300}},
-              {data: {id: 'n13', label: ''}, position: {x: -100, y: 400}},
+              {data: {id: 'n13', label: '1'}, position: {x: -100, y: 400}},
               {data: {id: 'n14', label: ''}, position: {x: 0, y: 400}},
-              {data: {id: 'n15', label: 'C'}, position: {x: 400, y: 100}},
-              {data: {id: 'n16', label: ''}, position: {x: 325, y: 175}},
-              {data: {id: 'n17', label: ''}, position: {x: 475, y: 175}},
-              {data: {id: 'n18', label: 'B'}, position: {x: 400, y: 250}},
-              {data: {id: 'n19', label: 'A'}, position: {x: 550, y: 250}},
-              {data: {id: 'n20', label: ''}, position: {x: 475, y: 325}}
+              {data: {id: 'n14-2', label: ''}, position: {x: 0, y: 500}},
+              {data: {id: 'n15', label: 'C'}, position: {x: 400, y: 50}}, // component 2
+              {data: {id: 'n16', label: ''}, position: {x: 325, y: 125}},
+              {data: {id: 'n17', label: ''}, position: {x: 475, y: 125}},
+              {data: {id: 'n18', label: 'B'}, position: {x: 400, y: 200}},
+              {data: {id: 'n19', label: 'A'}, position: {x: 550, y: 200}},
+              {data: {id: 'n20', label: ''}, position: {x: 475, y: 275}},
+              {data: {id: 'n21', label: '4'}, position: {x: 200, y: 400}}, // component 3
+              {data: {id: 'n22', label: '1'}, position: {x: 300, y: 400}},
+              {data: {id: 'n23', label: '2'}, position: {x: 300, y: 500}},
+              {data: {id: 'n24', label: '3'}, position: {x: 200, y: 500}},
+              {data: {id: 'n25', label: '4'}, position: {x: 400, y: 375}}, // component4
+              {data: {id: 'n26', label: '3'}, position: {x: 500, y: 450}},
+              {data: {id: 'n27', label: ''}, position: {x: 400, y: 525}}
             ],
             edges: [
-              {data: {source: 'n1', target: 'n4'}},
+              {data: {source: 'n1', target: 'n4'}}, // component 1
               {data: {source: 'n2', target: 'n3'}},
               {data: {source: 'n3', target: 'n4'}},
               {data: {source: 'n4', target: 'n5'}},
@@ -121,30 +130,39 @@
               {data: {source: 'n9', target: 'n12'}},
               {data: {source: 'n11', target: 'n13'}},
               {data: {source: 'n12', target: 'n14'}},
-              {data: {source: 'n16', target: 'n15'}},
+              {data: {source: 'n14', target: 'n14-2'}},
+              {data: {source: 'n16', target: 'n15'}}, // component 2
               {data: {source: 'n17', target: 'n15'}},
               {data: {source: 'n18', target: 'n15'}},
               {data: {source: 'n19', target: 'n17'}},
               {data: {source: 'n19', target: 'n18'}},
               {data: {source: 'n20', target: 'n18'}},
-              {data: {source: 'n19', target: 'n20'}}
+              {data: {source: 'n21', target: 'n24'}}, // component 3
+              {data: {source: 'n21', target: 'n22'}},
+              {data: {source: 'n23', target: 'n22'}},
+              {data: {source: 'n23', target: 'n24'}},
+              {data: {source: 'n26', target: 'n25'}}, // component 4
+              {data: {source: 'n26', target: 'n27'}},
+              {data: {source: 'n27', target: 'n25'}}
             ]
           },
         });
 
         // demo your core ext
         const api = cy.mergeSplit({
-          animate: document.getElementById("animate").checked,
+          animate: "during",
           animationDuration: 1500
         });
         
         document.getElementById("mergeButton").addEventListener("click", function() {
+          api.setOption("animationDuration", parseFloat(document.getElementById("animationDuration").value));
           let selectedEles = cy.elements(":selected");
           let unselectedEles = cy.elements(":unselected");
           api.merge(selectedEles, unselectedEles);
         });
 
         document.getElementById("mergePairwiseButton").addEventListener("click", function() {
+          api.setOption("animationDuration", parseFloat(document.getElementById("animationDuration").value));
           let selectedNode1 = cy.elements(":selected")[0];
           let selectedNode2 = cy.elements(":selected")[1];
           const strictCheck = document.getElementById("strictCheck").checked;
@@ -152,6 +170,7 @@
         });
 
         document.getElementById("splitButton").addEventListener("click", function() {
+          api.setOption("animationDuration", parseFloat(document.getElementById("animationDuration").value));
           const selectedEles = cy.elements(":selected");
           const keepBoundaryEles = document.getElementById("keepBoundary").checked;
           const splitDirection = document.getElementById("splitDirection").value;
@@ -159,15 +178,25 @@
           api.split(selectedEles, keepBoundaryEles, splitDirection, splitOffset);
         });
 
-        document.getElementById('animate').addEventListener('change', function () {
-          api.setOption("animate", document.getElementById("animate").checked);
+        document.querySelectorAll('input[name="animate"]').forEach(radio => {
+          radio.addEventListener('change', (e) => {
+            if (!e.target.checked) return;
+
+            let value = e.target.value;
+
+            // convert "false" string → actual boolean
+            if (value === 'false') {
+              value = false;
+            }
+            api.setOption("animate", value);
+          });
         });
       });
     </script>
   </head>
 
   <body>
-    <h1>cytoscape-merge-split demo</h1>
+    <h1>cytoscape-merge-split demo (<a href="https://github.com/sciluna/cytoscape.js-merge-split" target="_blank">GitHub repository</a>)</h1>
     <div id="menu">
       <button id="mergeButton" style="margin-bottom: 8px;">Merge Selected</button><br>
       <button id="mergePairwiseButton" style="margin-bottom: 8px;">Merge Pairwise</button>&nbsp;
@@ -189,8 +218,12 @@
       <label for="direction">Split offset:</label>
       <input type="number" id="splitOffset" style="margin-bottom: 8px;" name="offset" min="0" max="1000" value="100" />
       <hr style="margin-bottom: 15px;">
-      <label for="animate"> Animate:</label>
-      <input type="checkbox" id="animate" name="animate" checked>
+      <label> Animate:</label>
+      <input type="radio" id="animate1" name="animate" value="during" checked /><label for="animate1">During</label>
+      <input type="radio" id="animate2" name="animate" value="end"/><label for="animate2">End</label>
+      <input type="radio" id="animate3" name="animate" value="false"/><label for="animate3">False</label><br><br>
+      <label for="animationDuration">Animation Duration</label>
+      <input type="number" id="animationDuration" style="margin-bottom: 8px;" name="offset" min="0" max="3000" value="1000" />
     </div>
     <div id="cy"></div>
 

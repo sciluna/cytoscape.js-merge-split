@@ -675,18 +675,7 @@ function mergeSplit(cy, options) {
 
     if (sourceToTargetMap.size == 0) {
       return;
-    }
-
-    cy.style()
-      .selector('node.commonNode')
-        .style({
-          'background-color': '#ff0000'
-        }).update();  
-
-    sourceToTargetMap.forEach((value, key) => {
-      cy.getElementById(key).addClass("commonNode");
-      cy.getElementById(value).addClass("commonNode");
-    });
+    } 
 
     merge(sourceComponent, targetComponent, sourceToTargetMap, options);
   };  
@@ -819,7 +808,7 @@ function mergeSplit(cy, options) {
         shiftAmountX =(restBBox.x1 + restBBox.w / 2) - (splittedBBox.x1 + splittedBBox.w / 2);
         shiftAmountY = (restBBox.y1 + restBBox.h + splittedBBox.h / 2 + offset) - (splittedBBox.y1 + splittedBBox.h / 2);
       }
-      if(options.animate) { // animate nodes to calculated position
+      if(options.animate == "during" || options.animate == "end") { // animate nodes to calculated position
         splittedComponent.nodes().forEach(node => {
           node.animate({
             position: ({x: node.position().x + shiftAmountX, y: node.position().y + shiftAmountY}),
@@ -927,44 +916,100 @@ function merge(sourceComponent, targetComponent, sourceToTargetMap, options) {
     }
   }
 
-  let aniArray = [];
-  for (let i = 0; i < sourceComponent.nodes().length; i++) {
-    let node = sourceComponent.nodes()[i];
-    let nodeAni = node.animation({
-      position: transformationResult.get(node.id()),
-      queue: true
-    }, {
-      duration: options.animationDuration
+  // later operations use newPosition in scratch
+  cy.nodes().forEach(node => {
+    node.scratch('newPosition', {x: node.position().x, y: node.position().y});
+  });
+
+  // animate = during, so show all steps in an animated way
+  if (options.animate == "during") {
+    cy.style()
+      .selector('node.commonNode')
+        .style({
+          'background-color': '#ff0000'
+        }).update(); 
+
+    sourceToTargetMap.forEach((value, key) => {
+      cy.getElementById(key).addClass("commonNode");
+      cy.getElementById(value).addClass("commonNode");
     });
-    aniArray.push(nodeAni);
+
+    sourceComponent.nodes().forEach((node) => {
+      node.scratch('newPosition', transformationResult.get(node.id()));
+    });
+
+    let aniArray = [];
+    for (let i = 0; i < sourceComponent.nodes().length; i++) {
+      let node = sourceComponent.nodes()[i];
+      let nodeAni = node.animation({
+        position: node.scratch('newPosition'),
+        queue: true
+      }, {
+        duration: options.animationDuration
+      });
+      aniArray.push(nodeAni);
+    }
+
+    setTimeout(function(){
+      aniArray.forEach(ani => {
+        ani.play();
+      });
+    }, 1000);
+
+    // expant target component
+    let ani3Array = [];
+    setTimeout(function(){
+      ani3Array = expandComponent(targetComponent, sourceComponent, sourceToTargetMap, options);
+      ani3Array.forEach(ani => {
+        ani.play();
+      });
+    }, 4000);
+
+    let ani4Array = [];
+    setTimeout(function(){
+      ani4Array = moveSourceComponent(sourceComponent, sourceToTargetMap, options);
+      ani4Array.forEach(ani => {
+        ani.play();
+      });
+    }, 7000);
+
+    // merge source component to target
+    setTimeout(function(){
+      integrateSourceBBoxToTarget(sourceToTargetMap, sourceComponent, options);
+    }, 9000);
+  } else {  // end or false
+    sourceComponent.nodes().forEach((node) => {
+      node.scratch('newPosition', transformationResult.get(node.id()));
+    });
+    expandComponent(targetComponent, sourceComponent, sourceToTargetMap, options);
+    moveSourceComponent(sourceComponent, sourceToTargetMap, options);
+    if (options.animate == "end") {
+      cy.nodes().forEach((node, i) => {
+        if (node.scratch("newPosition")) {
+          node.animate({
+            position: node.scratch("newPosition"),
+            complete: (i) => {
+              if (i == cy.nodes().length) {
+                integrateSourceBBoxToTarget(sourceToTargetMap, sourceComponent, options);
+              }
+            }
+          }, {
+            duration: options.animationDuration
+          });
+        }
+      });
+      setTimeout(function(){
+        integrateSourceBBoxToTarget(sourceToTargetMap, sourceComponent, options);
+      }, options.animationDuration);
+    } else {
+      cy.nodes().forEach(node => {
+        if (node.scratch("newPosition")) {
+          node.position(node.scratch("newPosition"));
+        }
+      });
+      integrateSourceBBoxToTarget(sourceToTargetMap, sourceComponent, options);
+    }
   }
-
-  setTimeout(function(){
-    aniArray.forEach(ani => {
-      ani.play();
-    });
-  }, 1000);
-
-  // expant target component
-  let ani3Array = [];
-  setTimeout(function(){
-    ani3Array = expandTarget(targetComponent, sourceComponent, sourceToTargetMap, options);
-    ani3Array[0].forEach(ani => {
-      ani.play();
-    });
-  }, 4000);
-
-  setTimeout(function(){
-    ani3Array[1].forEach(ani => {
-      ani.play();
-    });
-  }, 6000);
-
-  // merge source component to target
-  setTimeout(function(){
-    integrateSourceBBoxToTarget(sourceToTargetMap);
-  }, 8000); 
-
 }
 
 // computes bounding box for given node positions by not considering node dimensions
@@ -979,7 +1024,7 @@ function computeBB(transformed) {
     maxY = Math.max(maxY, p.y);
   });
 
-  return { x1: minX, y1: minY, x2: maxX, y2: maxY };
+  return { x1: minX, y1: minY, x2: maxX, y2: maxY, w: maxX - minX, h: maxY - minY };
 }
 
 // calculates intersection area
@@ -1110,20 +1155,26 @@ function applyTransformationMatrix(sourceComponent, transformationMatrix) {
   return transformationResult;
 }
 
-function expandTarget(targetComponent, sourceComponent, sourceToTargetMap, options) {
+// expand either source or target component based on the size of the bboxes of the components
+function expandComponent(targetComponent, sourceComponent, sourceToTargetMap, options) {
   let targetCommonNodeSet = cy.collection();
-  let sourceBBoxCommonNodeSet = cy.collection();
+  let sourceCommonNodeSet = cy.collection();
   sourceToTargetMap.forEach((value, key) => {
     targetCommonNodeSet.merge(cy.getElementById(value));
-    sourceBBoxCommonNodeSet.merge(cy.getElementById(key));
+    sourceCommonNodeSet.merge(cy.getElementById(key));
   });
 
   let bbTargetCommon = targetCommonNodeSet.boundingBox({includeLabels: false, includeOverlays: false});
-  let bbsourceBBoxCommon = sourceBBoxCommonNodeSet.boundingBox({includeLabels: false, includeOverlays: false});
-  let bbDiff = {x: (bbTargetCommon.x1 + bbTargetCommon.w / 2) - (bbsourceBBoxCommon.x1 + bbsourceBBoxCommon.w / 2), y: (bbTargetCommon.y1 + bbTargetCommon.h / 2) - (bbsourceBBoxCommon.y1 + bbsourceBBoxCommon.h / 2)};
+  let bbSourceCommonPositions = [];
+  sourceCommonNodeSet.forEach(node => {
+    bbSourceCommonPositions.push(node.scratch("newPosition"));
+  });
+  let bbSourceCommon = computeBB(bbSourceCommonPositions);
+  //let bbSourceCommon = sourceCommonNodeSet.boundingBox({includeLabels: false, includeOverlays: false});
+  let bbDiff = {x: (bbTargetCommon.x1 + bbTargetCommon.w / 2) - (bbSourceCommon.x1 + bbSourceCommon.w / 2), y: (bbTargetCommon.y1 + bbTargetCommon.h / 2) - (bbSourceCommon.y1 + bbSourceCommon.h / 2)};
 
-  sourceBBoxCommonNodeSet.forEach(node => {
-    node.scratch('position', {x: node.position().x + bbDiff.x, y: node.position().y + bbDiff.y});
+  sourceCommonNodeSet.forEach(node => {
+    node.scratch('position', {x: node.scratch("newPosition").x + bbDiff.x, y: node.scratch("newPosition").y + bbDiff.y});
   });
 
   let minXNode, maxXNode, minYNode, maxYNode = 0;
@@ -1131,7 +1182,7 @@ function expandTarget(targetComponent, sourceComponent, sourceToTargetMap, optio
   let maxX = Number.MIN_SAFE_INTEGER;
   let minY = Number.MAX_SAFE_INTEGER;
   let maxY = Number.MIN_SAFE_INTEGER;
-  sourceBBoxCommonNodeSet.forEach((node, i) => {
+  sourceCommonNodeSet.forEach((node, i) => {
     let nodeTempPos = node.scratch('position');
     if(nodeTempPos.x < minX) {
       minXNode = node;
@@ -1156,23 +1207,55 @@ function expandTarget(targetComponent, sourceComponent, sourceToTargetMap, optio
   let leftShiftAmount = cy.getElementById(sourceToTargetMap.get(minXNode.id())).position().x - minX;
   let rightShiftAmount = maxX - cy.getElementById(sourceToTargetMap.get(maxXNode.id())).position().x;
 
+  // expand target component when necessary
   targetComponent.nodes().forEach(node => {
-    node.scratch('newPosition', {x: node.position().x, y: node.position().y});
-    if(node.position().y <= cy.getElementById(sourceToTargetMap.get(minYNode.id())).position().y) {
-      node.scratch('newPosition', {x: node.scratch('newPosition').x, y: node.scratch('newPosition').y - upShiftAmount});
+    if (upShiftAmount > 0) {
+      if (node.position().y <= cy.getElementById(sourceToTargetMap.get(minYNode.id())).position().y) {
+        node.scratch('newPosition', {x: node.scratch('newPosition').x, y: node.scratch('newPosition').y - upShiftAmount});
+      }
     }
-    if(node.position().y >= cy.getElementById(sourceToTargetMap.get(maxYNode.id())).position().y) {
-      node.scratch('newPosition', {x: node.scratch('newPosition').x, y: node.scratch('newPosition').y + downShiftAmount});
+    if (downShiftAmount > 0) {
+      if (node.position().y >= cy.getElementById(sourceToTargetMap.get(maxYNode.id())).position().y) {
+        node.scratch('newPosition', {x: node.scratch('newPosition').x, y: node.scratch('newPosition').y + downShiftAmount});
+      }
     }
-    if(node.position().x <= cy.getElementById(sourceToTargetMap.get(minXNode.id())).position().x) {
-      node.scratch('newPosition', {x: node.scratch('newPosition').x - leftShiftAmount, y: node.scratch('newPosition').y});
+    if (leftShiftAmount > 0) {
+      if (node.position().x <= cy.getElementById(sourceToTargetMap.get(minXNode.id())).position().x) {
+        node.scratch('newPosition', {x: node.scratch('newPosition').x - leftShiftAmount, y: node.scratch('newPosition').y});
+      }
     }
-    if(node.position().x >= cy.getElementById(sourceToTargetMap.get(maxXNode.id())).position().x) {
-      node.scratch('newPosition', {x: node.scratch('newPosition').x + rightShiftAmount, y: node.scratch('newPosition').y});
+    if (rightShiftAmount > 0) {
+      if (node.position().x >= cy.getElementById(sourceToTargetMap.get(maxXNode.id())).position().x) {
+        node.scratch('newPosition', {x: node.scratch('newPosition').x + rightShiftAmount, y: node.scratch('newPosition').y});
+      }
     }
   });
 
-  let animations1 = [];
+  // expand source component when necessary
+  sourceComponent.nodes().forEach(node => {
+    if (upShiftAmount < 0) {
+      if (node.position().y <= cy.getElementById(minYNode.id()).position().y) {
+        node.scratch('newPosition', {x: node.scratch('newPosition').x, y: node.scratch('newPosition').y + upShiftAmount});
+      }
+    }
+    if (downShiftAmount < 0) {
+      if(node.position().y >= cy.getElementById(maxYNode.id()).position().y) {
+        node.scratch('newPosition', {x: node.scratch('newPosition').x, y: node.scratch('newPosition').y - downShiftAmount});
+      }
+    }
+    if (leftShiftAmount < 0) {
+      if(node.position().x <= cy.getElementById(minXNode.id()).position().x) {
+        node.scratch('newPosition', {x: node.scratch('newPosition').x + leftShiftAmount, y: node.scratch('newPosition').y});
+      }
+    }
+    if (rightShiftAmount < 0) {
+      if(node.position().x >= cy.getElementById(maxXNode.id()).position().x) {
+        node.scratch('newPosition', {x: node.scratch('newPosition').x - rightShiftAmount, y: node.scratch('newPosition').y});
+      }
+    }
+  });
+
+  let animations = [];
   targetComponent.nodes().forEach(node => {
     let ani = node.animation({
       position: node.scratch('newPosition'),
@@ -1180,48 +1263,124 @@ function expandTarget(targetComponent, sourceComponent, sourceToTargetMap, optio
     }, {
       duration: options.animationDuration
     });
-    animations1.push(ani);
+    animations.push(ani);
   });
 
-  let animations2 = [];
   sourceComponent.nodes().forEach(node => {
     let ani = node.animation({
-      position: {x: node.position().x + bbDiff.x, y: node.position().y + bbDiff.y},
+      position: node.scratch('newPosition'),
       queue: true
     }, {
       duration: options.animationDuration
     });
-    animations2.push(ani);    
+    animations.push(ani);
   });
-  return [animations1, animations2];
+
+  return animations;
 }
 
-function integrateSourceBBoxToTarget(sourceToTargetMap) {
+function moveSourceComponent(sourceComponent, sourceToTargetMap, options) {
+  let targetCommonNodeSet = cy.collection();
+  let sourceCommonNodeSet = cy.collection();
   sourceToTargetMap.forEach((value, key) => {
-    let sourceBBoxNode = cy.getElementById(key);
-    cy.getElementById(value);
-    sourceBBoxNode.incomers().edges().forEach(edge => {
-      if(!(sourceToTargetMap.get(edge.source().id()) && sourceToTargetMap.get(edge.target().id()) && cy.getElementById(sourceToTargetMap.get(edge.source().id())).edgesTo(cy.getElementById(sourceToTargetMap.get(edge.target().id())).length != 0))){
-        edge.move({
-          target: value
-        });
-      }
-    });
-    sourceBBoxNode.outgoers().edges().forEach(edge => {
-      if(!(sourceToTargetMap.get(edge.source().id()) && sourceToTargetMap.get(edge.target().id()) && cy.getElementById(sourceToTargetMap.get(edge.source().id())).edgesTo(cy.getElementById(sourceToTargetMap.get(edge.target().id())).length != 0))){
-        edge.move({
-          source: value
-        });
-      }
-    });
-    sourceBBoxNode.remove();	// remove dangling node
+    targetCommonNodeSet.merge(cy.getElementById(value));
+    sourceCommonNodeSet.merge(cy.getElementById(key));
   });
-  cy.elements().unselect();
-  //setTimeout(function(){
-    sourceToTargetMap.forEach((value, key) => {
-      cy.getElementById(value).removeClass("commonNode");
+
+  let bbTargetCommon = targetCommonNodeSet.boundingBox({includeLabels: false, includeOverlays: false});
+  let bbSourceCommonPositions = [];
+  sourceCommonNodeSet.forEach(node => {
+    bbSourceCommonPositions.push(node.scratch("newPosition"));
+  });
+  let bbSourceCommon = computeBB(bbSourceCommonPositions);
+  let bbDiff = {x: (bbTargetCommon.x1 + bbTargetCommon.w / 2) - (bbSourceCommon.x1 + bbSourceCommon.w / 2), y: (bbTargetCommon.y1 + bbTargetCommon.h / 2) - (bbSourceCommon.y1 + bbSourceCommon.h / 2)};
+
+  let animations = [];
+  sourceComponent.nodes().forEach(node => {
+    node.scratch('newPosition', {x: node.scratch("newPosition").x + bbDiff.x, y: node.scratch("newPosition").y + bbDiff.y});
+    let ani = node.animation({
+      position: node.scratch('newPosition'),
+      queue: true
+    }, {
+      duration: options.animationDuration
     });
-  //}, 500); 
+    animations.push(ani);    
+  });
+  return animations;
+}
+
+function integrateSourceBBoxToTarget(sourceToTargetMap, sourceComponent, options) {
+  let targetCommonNodeSet = cy.collection();
+  let sourceCommonNodeSet = cy.collection();
+  sourceToTargetMap.forEach((value, key) => {
+    targetCommonNodeSet.merge(cy.getElementById(value));
+    sourceCommonNodeSet.merge(cy.getElementById(key));
+  });
+  // get edges between common nodes
+  let sourceEdgeSet = sourceCommonNodeSet.edgesWith(sourceCommonNodeSet);
+  let targetEdgeSet = targetCommonNodeSet.edgesWith(targetCommonNodeSet);
+  // handle edges between common nodes
+  for(let i = 0; i < sourceEdgeSet.length; i++) {
+    let sourceEdge = sourceEdgeSet[i];
+    let check = false;
+    for(let j = 0; j < targetEdgeSet.length; j++) {
+      let targetEdge = targetEdgeSet[i];
+      if (options.edgeMatcher(sourceEdge, targetEdge)) {  // found an edge to merge
+        mergeEdges(targetEdge, sourceEdge); // if source has extra data fields, transfer them to target 
+        sourceEdge.remove(); // remove the edge from source component
+        check = true;
+        break;
+      }
+    }
+    if (!check) { // no edge found to merge, so transfer it target
+      let value1 = sourceToTargetMap.get(sourceEdge.source().id());
+      let value2 = sourceToTargetMap.get(sourceEdge.target().id());
+      sourceEdge.move({
+        source: value1,
+        target: value2
+      });
+    }
+  }
+  // handle edges connected to common nodes in source component
+  let sourceDiffNodes = sourceComponent.nodes().difference(sourceCommonNodeSet);
+  let connectingEdges = sourceCommonNodeSet.edgesWith(sourceDiffNodes);
+  connectingEdges.forEach(edge => {
+    // check if source node is common
+    let value = sourceToTargetMap.get(edge.source().id());
+    if (value) {
+      edge.move({
+        source: value
+      });
+    }
+    // check if target node is common
+    value = sourceToTargetMap.get(edge.target().id());
+    if (value) {
+      edge.move({
+        target: value
+      });
+    }
+  });
+  sourceCommonNodeSet.remove(); // remove dangling nodes
+
+  cy.elements().unselect();
+  sourceToTargetMap.forEach((value, key) => {
+    cy.getElementById(value).removeClass("commonNode");
+  });
+}
+
+function mergeEdges(targetEdge, sourceEdge) {
+  const targetData = targetEdge.data();
+  const sourceData = sourceEdge.data();
+
+  const merged = { ...targetData };
+
+  for (const key in sourceData) {
+    if (merged[key] === undefined) {
+      merged[key] = sourceData[key];
+    }
+  }
+
+  targetEdge.data(merged);
 }
 
 function cloneNodes(jsons) {
@@ -1300,7 +1459,7 @@ function register(cytoscape) {
     let cy = this;
 
     let options = {
-      animate: true,
+      animate: "end",
       animationDuration: 1000,
       nodeMatcher: (n1, n2) => {  // n1 from source component, n2 from target component
         // check if labels match

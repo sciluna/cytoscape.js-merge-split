@@ -1,9 +1,11 @@
-# cytoscape-merge-split (under development)
+# cytoscape-merge-split
 
 ## Description
 This extension adds support for merging/splitting graph components while respecting the existing layout.
 
 Click [here](https://sciluna.github.io/cytoscape.js-merge-split/demo.html) for a demo.
+
+https://github.com/user-attachments/assets/3bc86233-c7b5-4c47-a8d1-87e4628f089f
 
 ## API
 
@@ -90,3 +92,6 @@ This project is set up to automatically be published to npm.  To publish:
 1. Push to origin: `git push && git push --tags`
 1. Publish to npm: `npm publish .`
 1. [Make a new release](https://github.com/hasanbalci/cytoscape.js-transform/releases/new) for Zenodo.
+
+## Team
+[Hasan Balci](https://github.com/hasanbalci) and [Augustin Luna](https://github.com/cannin) of [Luna Lab](https://github.com/sciluna)

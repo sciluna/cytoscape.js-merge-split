@@ -5,7 +5,7 @@ This extension adds support for merging/splitting graph components while respect
 
 Click [here](https://sciluna.github.io/cytoscape.js-merge-split/demo.html) for a demo.
 
-https://github.com/user-attachments/assets/3bc86233-c7b5-4c47-a8d1-87e4628f089f
+https://github.com/user-attachments/assets/c65b3328-2e3c-4d43-8448-ae212e06697d
 
 ## API
 
@@ -46,6 +46,7 @@ Change the given option with the given value.
 ```
 ## Dependencies
  * Cytoscape.js ^3.3.0
+ * cytoscape-fcose ^2.2.0 (optional - to remove overlaps after merge)
 
 ## Usage instructions
 

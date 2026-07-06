@@ -14,6 +14,9 @@
     <script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>
     <script src="dist/cytoscape-merge-split.umd.js"></script>
 
+    <script src="https://unpkg.com/layout-base/layout-base.js"></script>
+    <script src="https://unpkg.com/cose-base/cose-base.js"></script>
+    <script src="https://unpkg.com/cytoscape-fcose/cytoscape-fcose.js"></script>   
     <style>
       body {
         font-family: helvetica neue, helvetica, liberation sans, arial, sans-serif;
@@ -93,24 +96,24 @@
               {data: {id: 'n5', label: ''}, position: {x: 100, y: 100}},
               {data: {id: 'n6', label: ''}, position: {x: -300, y: 200}},
               {data: {id: 'n7', label: ''}, position: {x: -200, y: 200}},
-              {data: {id: 'n8', label: ''}, position: {x: -100, y: 200}},
+              {data: {id: 'n8', label: '1'}, position: {x: -100, y: 200}},
               {data: {id: 'n9', label: 'C'}, position: {x: 0, y: 200}},
               {data: {id: 'n10', label: ''}, position: {x: 100, y: 200}},
               {data: {id: 'n11', label: '2'}, position: {x: -100, y: 300}},
               {data: {id: 'n12', label: ''}, position: {x: 0, y: 300}},
-              {data: {id: 'n13', label: '1'}, position: {x: -100, y: 400}},
+              {data: {id: 'n13', label: ''}, position: {x: -100, y: 400}},
               {data: {id: 'n14', label: ''}, position: {x: 0, y: 400}},
               {data: {id: 'n14-2', label: ''}, position: {x: 0, y: 500}},
               {data: {id: 'n15', label: 'C'}, position: {x: 400, y: 50}}, // component 2
-              {data: {id: 'n16', label: ''}, position: {x: 325, y: 125}},
+              {data: {id: 'n16', label: ''}, position: {x: 300, y: 50}},
               {data: {id: 'n17', label: ''}, position: {x: 475, y: 125}},
               {data: {id: 'n18', label: 'B'}, position: {x: 400, y: 200}},
               {data: {id: 'n19', label: 'A'}, position: {x: 550, y: 200}},
               {data: {id: 'n20', label: ''}, position: {x: 475, y: 275}},
-              {data: {id: 'n21', label: '4'}, position: {x: 200, y: 400}}, // component 3
-              {data: {id: 'n22', label: '1'}, position: {x: 300, y: 400}},
-              {data: {id: 'n23', label: '2'}, position: {x: 300, y: 500}},
-              {data: {id: 'n24', label: '3'}, position: {x: 200, y: 500}},
+              {data: {id: 'n21', label: '1'}, position: {x: 200, y: 400}}, // component 3
+              {data: {id: 'n22', label: '2'}, position: {x: 300, y: 400}},
+              {data: {id: 'n23', label: '3'}, position: {x: 300, y: 500}},
+              {data: {id: 'n24', label: '4'}, position: {x: 200, y: 500}},
               {data: {id: 'n25', label: '4'}, position: {x: 400, y: 375}}, // component4
               {data: {id: 'n26', label: '3'}, position: {x: 500, y: 450}},
               {data: {id: 'n27', label: ''}, position: {x: 400, y: 525}}

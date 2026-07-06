@@ -975,10 +975,16 @@ function merge(sourceComponent, targetComponent, sourceToTargetMap, options) {
       });
     }, 7000);
 
+    let sourceDiffNodes;
     // merge source component to target
     setTimeout(function(){
-      integrateSourceBBoxToTarget(sourceToTargetMap, sourceComponent, options);
+      sourceDiffNodes = integrateSourceBBoxToTarget(sourceToTargetMap, sourceComponent, options);
     }, 9000);
+
+    // merge source component to target
+    setTimeout(function(){
+      handleOverlaps(targetComponent, sourceDiffNodes);
+    }, 9200);
   } else {  // end or false
     sourceComponent.nodes().forEach((node) => {
       node.scratch('newPosition', transformationResult.get(node.id()));
@@ -989,27 +995,24 @@ function merge(sourceComponent, targetComponent, sourceToTargetMap, options) {
       cy.nodes().forEach((node, i) => {
         if (node.scratch("newPosition")) {
           node.animate({
-            position: node.scratch("newPosition"),
-            complete: (i) => {
-              if (i == cy.nodes().length) {
-                integrateSourceBBoxToTarget(sourceToTargetMap, sourceComponent, options);
-              }
-            }
+            position: node.scratch("newPosition")
           }, {
             duration: options.animationDuration
           });
         }
       });
       setTimeout(function(){
-        integrateSourceBBoxToTarget(sourceToTargetMap, sourceComponent, options);
-      }, options.animationDuration);
+        let sourceDiffNodes = integrateSourceBBoxToTarget(sourceToTargetMap, sourceComponent, options);
+        handleOverlaps(targetComponent, sourceDiffNodes);
+      }, options.animationDuration + 200);
     } else {
       cy.nodes().forEach(node => {
         if (node.scratch("newPosition")) {
           node.position(node.scratch("newPosition"));
         }
       });
-      integrateSourceBBoxToTarget(sourceToTargetMap, sourceComponent, options);
+      let sourceDiffNodes = integrateSourceBBoxToTarget(sourceToTargetMap, sourceComponent, options);
+      handleOverlaps(targetComponent, sourceDiffNodes);
     }
   }
 }
@@ -1368,6 +1371,42 @@ function integrateSourceBBoxToTarget(sourceToTargetMap, sourceComponent, options
   sourceToTargetMap.forEach((value, key) => {
     cy.getElementById(value).removeClass("commonNode");
   });
+
+  return sourceDiffNodes;
+}
+
+function handleOverlaps(targetComponent, sourceDiffNodes, options) {
+  // identify overlapping nodes between sourceDiffNodes and targetComponent
+  let overlappingNodes = new Set();
+  sourceDiffNodes.forEach(sourceNode => { 
+    let sourceBBox = sourceNode.boundingBox({ includeLabels: false, includeOverlays: false });
+    let isOverlapping = false;
+    targetComponent.nodes().forEach(targetNode => {
+      let targetBBox = targetNode.boundingBox({ includeLabels: false, includeOverlays: false });
+      if (intersectionArea(sourceBBox, targetBBox) > 0) {
+        //overlappingNodes.add(targetNode);
+        isOverlapping = true;
+      }
+    });
+    if (isOverlapping) {
+      overlappingNodes.add(sourceNode);
+    }
+  });
+  console.log(overlappingNodes);
+
+  let fixedNodeConstraints = [];
+  cy.nodes().not(":parent").forEach(node => { 
+    if (!overlappingNodes.has(node)) {
+      fixedNodeConstraints.push({nodeId: node.id(), position: node.position()});
+    }
+  });
+
+  if(cytoscape('layout', 'fcose') != null) {
+    cy.layout({name: 'fcose', animate: true, fit: false, randomize: false, fixedNodeConstraint: fixedNodeConstraints, initialEnergyOnIncremental: 0.015, 
+      idealEdgeLength: function(edge) {
+        return Math.abs(edge.source().position().x - edge.target().position().x) - (edge.source().width()/2 + edge.target().width()/2)}
+      }).run();
+  }
 }
 
 function mergeEdges(targetEdge, sourceEdge) {

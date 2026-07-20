@@ -32,12 +32,12 @@ Change the given option with the given value.
     let options = {
       animate: true, // whether to animate during merge/split operations
       animationDuration: 1000, // when animate is true, the duration in milliseconds of the animation
-      nodeMatcher: (n1, n2) => {  // n1 from source component, n2 from target component
+      nodeMatcher: (n1, n2, options) => {  // n1 from source component, n2 from target component, options to support app-specific options
         // check if labels match
         return !!(n1.data('label') && n1.data('label') != '' && n2.data('label') &&
           n2.data('label') != '' && n1.data('label') === n2.data('label'));
       },
-      edgeMatcher: (e1, e2) => {  // e1 from source component, e2 from target component
+      edgeMatcher: (e1, e2, options) => {  // e1 from source component, e2 from target component, options to support app-specific options
         // check if source and target labels match
         return e1.source().data('label') === e2.source().data('label') &&
           e1.target().data('label') === e2.target().data('label');

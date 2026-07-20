@@ -673,7 +673,7 @@
       // construct common nodes map based on matched nodes
       sourceComponent.nodes().forEach(node1 => {
         targetComponent.nodes().forEach(node2 => {
-          if (options.nodeMatcher(node1, node2)) {
+          if (options.nodeMatcher(node1, node2, options)) {
             sourceToTargetMap.set(node1.id(), node2.id()); 
           }
         });
@@ -693,6 +693,13 @@
       }
       const component1 = node1.component();
       const component2 = node2.component();
+      if (node1.isParent() && node2.isParent()) {
+        let descendants = node1.descendants();
+        component1.merge(descendants).merge(descendants.edgesWith(descendants));
+        descendants = node2.descendants();
+        component2.merge(descendants).merge(descendants.edgesWith(descendants));
+      }
+      
       const [sourceComponent, targetComponent] = component1.nodes().length > component2.nodes().length ? [component2, component1] : [component1, component2];
 
       if (sourceComponent.intersection(targetComponent).length != 0) {
@@ -701,11 +708,22 @@
       }
 
       let sourceToTargetMap = new Map();
-      if (!checkMatch || options.nodeMatcher(node1, node2)) {
+
+
+      if (!checkMatch || options.nodeMatcher(node1, node2, options)) {
+        if (node1.isParent() && node2.isParent()) {
+          sourceComponent.nodes().forEach(node1 => {
+            targetComponent.nodes().forEach(node2 => {
+              if (options.nodeMatcher(node1, node2, options)) {
+                sourceToTargetMap.set(node1.id(), node2.id()); 
+              }
+            });
+          });
+        }
         const [sourceNode, targetNode] = sourceComponent.nodes().contains(node1) ? [node1, node2] : [node2, node1];
         sourceToTargetMap.set(sourceNode.id(), targetNode.id());
       }
-      if (sourceToTargetMap.size == 1) {
+      if (sourceToTargetMap.size > 0) {
         merge(sourceComponent, targetComponent, sourceToTargetMap, options);
       }
     };
@@ -1334,7 +1352,7 @@
       let check = false;
       for(let j = 0; j < targetEdgeSet.length; j++) {
         let targetEdge = targetEdgeSet[i];
-        if (options.edgeMatcher(sourceEdge, targetEdge)) {  // found an edge to merge
+        if (options.edgeMatcher(sourceEdge, targetEdge, options)) {  // found an edge to merge
           mergeEdges(targetEdge, sourceEdge); // if source has extra data fields, transfer them to target 
           sourceEdge.remove(); // remove the edge from source component
           check = true;
@@ -1369,7 +1387,18 @@
         });
       }
     });
-    sourceCommonNodeSet.remove(); // remove dangling nodes
+    sourceCommonNodeSet.forEach(node => {
+      // if parent node, move its descendants to target parent first
+      if (node.isParent()) {
+        let targetParent = cy.getElementById(sourceToTargetMap.get(node.id()));
+        node.descendants().forEach(descendant => {
+          descendant.move({parent: targetParent.id()});
+        });
+      } 
+      node.remove();
+    });
+
+    //sourceCommonNodeSet.remove(); // remove dangling nodes
 
     cy.elements().unselect();
     sourceToTargetMap.forEach((value, key) => {
@@ -1405,11 +1434,21 @@
       }
     });
 
-    if(cytoscape('layout', 'fcose') != null) {
-      cy.layout({name: 'fcose', animate: true, fit: false, randomize: false, fixedNodeConstraint: fixedNodeConstraints, initialEnergyOnIncremental: 0.015, 
-        idealEdgeLength: function(edge) {
-          return Math.abs(edge.source().position().x - edge.target().position().x) - (edge.source().width()/2 + edge.target().width()/2)}
+    const isFcoseAvailable = isLayoutAvailable(cy, "fcose");
+    if(isFcoseAvailable) {
+      cy.layout({name: 'fcose', animate: true, fit: false, randomize: false, fixedNodeConstraint: fixedNodeConstraints, initialEnergyOnIncremental: 0.3, 
+  /*       idealEdgeLength: function(edge) {
+          return Math.abs(edge.source().position().x - edge.target().position().x) - (edge.source().width()/2 + edge.target().width()/2)} */
         }).run();
+    }
+  }
+
+  function isLayoutAvailable(cy, layoutName) {
+    try {
+      cy.layout({ name: layoutName });
+      return true;
+    } catch (e) {
+      return false;
     }
   }
 
@@ -1506,11 +1545,11 @@
       let options = {
         animate: "end",
         animationDuration: 1000,
-        nodeMatcher: (n1, n2) => {  // n1 from source component, n2 from target component
+        nodeMatcher: (n1, n2, options) => {  // n1 from source component, n2 from target component
           // check if labels match
           return !!(n1.data('label') && n1.data('label') != '' && n2.data('label') && n2.data('label') != '' && n1.data('label') === n2.data('label'));
         },
-        edgeMatcher: (e1, e2) => {  // e1 from source component, e2 from target component
+        edgeMatcher: (e1, e2, options) => {  // e1 from source component, e2 from target component
           // check if source and target labels match
           return e1.source().data('label') === e2.source().data('label') && e1.target().data('label') === e2.target().data('label');
         }
@@ -1557,7 +1596,7 @@
         tempOpts[key] = options[key];
 
       for (var key in extendBy)
-        if (tempOpts.hasOwnProperty(key))
+        //if (tempOpts.hasOwnProperty(key))
           tempOpts[key] = extendBy[key];
       return tempOpts;
     }

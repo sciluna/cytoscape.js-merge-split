@@ -16,11 +16,11 @@ export default function register(cytoscape) {
     let options = {
       animate: "end",
       animationDuration: 1000,
-      nodeMatcher: (n1, n2) => {  // n1 from source component, n2 from target component
+      nodeMatcher: (n1, n2, options) => {  // n1 from source component, n2 from target component
         // check if labels match
         return !!(n1.data('label') && n1.data('label') != '' && n2.data('label') && n2.data('label') != '' && n1.data('label') === n2.data('label'));
       },
-      edgeMatcher: (e1, e2) => {  // e1 from source component, e2 from target component
+      edgeMatcher: (e1, e2, options) => {  // e1 from source component, e2 from target component
         // check if source and target labels match
         return e1.source().data('label') === e2.source().data('label') && e1.target().data('label') === e2.target().data('label');
       }
@@ -67,7 +67,7 @@ export default function register(cytoscape) {
       tempOpts[key] = options[key];
 
     for (var key in extendBy)
-      if (tempOpts.hasOwnProperty(key))
+      //if (tempOpts.hasOwnProperty(key))
         tempOpts[key] = extendBy[key];
     return tempOpts;
   }

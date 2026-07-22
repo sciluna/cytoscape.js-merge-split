@@ -1419,7 +1419,7 @@ function handleOverlaps(targetComponent, sourceDiffNodes, options) {
       overlappingNodes.add(sourceNode);
     }
   });
-  console.log(overlappingNodes);
+  //console.log(overlappingNodes);
 
   let fixedNodeConstraints = [];
   cy.nodes().not(":parent").forEach(node => { 

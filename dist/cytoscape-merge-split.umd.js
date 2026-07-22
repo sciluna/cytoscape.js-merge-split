@@ -1568,19 +1568,19 @@
         };
 
         setScratch(cy, 'options', options);
-        setScratch(cy, 'mergeSplit', api);
+        setScratch(cy, 'api', api);
       }
       // Expose the API to the users
-      return getScratch(cy, 'mergeSplit');
+      return getScratch(cy, 'api');
     });
 
     // Get the whole scratchpad reserved for this extension
     function getScratch(cyOrEle, name) {
-      if (cyOrEle.scratch('cyComplexityManagement') === undefined) {
-        cyOrEle.scratch('cyComplexityManagement', {});
+      if (cyOrEle.scratch('_mergeSplit') === undefined) {
+        cyOrEle.scratch('_mergeSplit', {});
       }
 
-      var scratch = cyOrEle.scratch('cyComplexityManagement');
+      var scratch = cyOrEle.scratch('_mergeSplit');
       var retVal = (name === undefined) ? scratch : scratch[name];
       return retVal;
     }
